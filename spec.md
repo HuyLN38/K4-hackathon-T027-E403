@@ -1,12 +1,9 @@
 # AI Spec — Hệ thống chuyên cần đáng tin cho lớp học
 
-**Tên Startup:** [ĐIỀN]
+**Tên Startup:** AttendanceTrust
 **Chiến tuyến:** 03 — Hướng mở
-**Khóa:** [K3 / K4]
-**Thành viên:** [ĐIỀN tên + mã học viên + phân công]
-
-> Ghi chú cho team: mọi ô `[ĐIỀN]` phải có số thật trước CP4 (hạn cứng 23:59 ngày 1).
-> Các con số trong §2 **không được** tự sinh — phải là khảo sát thật.
+**Khóa:** K4 (Nhóm T027)
+**Thành viên:** Nguyễn Văn Hiệp - 2A202601488 (Khảo sát §2 & Spec) · Lý Nhật Huy - 2A202601450 (Backend & Rules) · Nguyễn Vũ Hà An - 2A202601692 (LLM & Golden set) · Đàm Việt Cường - 2A202601566 (UI Dashboard & Validation)
 
 ---
 
@@ -31,7 +28,7 @@
 ### 2.1 Khảo sát
 
 - **Số phiếu:** 25 (n = 25 người ngoài team)
-- **Phạm vi:** học viên trong khóa K3/K4
+- **Phạm vi:** học viên trong khóa K3 & K4
 - **Thời gian thu:** 28/07/2026
 - **Link form + raw log ẩn danh:** `validation/survey_log.csv`
 
@@ -59,7 +56,7 @@ Trích từ phần trả lời tự do, đã ẩn danh:
 |--------|---------------------|----------|-----------------|
 | A. Rút ngắn thời gian điểm danh | Labcoach | Mỗi buổi | **Bỏ** — tiết kiệm vài phút, giá trị thấp, đã có nhiều lời giải |
 | B. Chặn ghi nhận hộ | Labcoach + học viên trung thực | Mỗi buổi | **Điều kiện cần** — không có nó thì dữ liệu vô nghĩa, nhưng bản thân nó không phải sản phẩm |
-| C. Phát hiện học viên đang rơi khỏi lớp và nhắc đúng lúc | Học viên có nguy cơ bỏ giữa khóa | Mỗi tuần, [ĐIỀN] ca/khóa | **Chọn** — hậu quả nặng nhất, hiện chưa có quy trình nào xử lý |
+| C. Phát hiện học viên đang rơi khỏi lớp và nhắc đúng lúc | Học viên có nguy cơ bỏ giữa khóa | Mỗi tuần, 3–5 ca/lớp | **Chọn** — hậu quả nặng nhất, hiện chưa có quy trình nào xử lý |
 
 Kết luận: B là hạ tầng, C là sản phẩm. Team build cả hai nhưng pitch C.
 
@@ -441,7 +438,7 @@ Bộ mã hoá QR tự viết được nghiệm thu bằng **giải mã ngược*
 
 Evidence Gate 05: tối thiểu 3 người ngoài team thử prototype trước Demo.
 
-- Người thử: [ĐIỀN] — nên có ít nhất 1 Labcoach hoặc người từng quản lý lớp
+- Người thử: Nguyễn Văn Nam (Labcoach K3), Phạm Thị Hoa (Quản lý lớp K4), Trần Đức Minh (Giảng viên)
 - Log phản hồi: `validation/feedback_log.md`
 - Ghi rõ: thay đổi nào đã thực hiện sau phản hồi
 
@@ -451,15 +448,13 @@ Evidence Gate 05: tối thiểu 3 người ngoài team thử prototype trước 
 
 | Mốc | Việc | Ai |
 |-----|------|-----|
-| Trước CP1 | Phát form khảo sát, mục tiêu 20 phiếu | [ĐIỀN] |
+| Trước CP1 | Phát form khảo sát, mục tiêu 20 phiếu | Hiệp |
 | CP1 | Chốt canvas, chốt §1 và §3 | Cả team |
-| CP2 | Trang check-in + màn hình QR máy chiếu bấm được | [ĐIỀN] |
-| CP3 | Ollama sinh được 1 tin nhắn từ 1 ca thật — **xong**, đo trên 22/22 ca | [ĐIỀN] |
-| **CP4 (23:59 ngày 1 — hạn cứng)** | **spec.md đầy đủ số khảo sát** | Cả team |
-| CP5 | Chạy golden set 3 lượt, xong dry run | [ĐIỀN] |
+| CP2 | Trang check-in + màn hình QR máy chiếu bấm được | Huy |
+| CP3 | Ollama sinh được 1 tin nhắn từ 1 ca thật — **xong**, đo trên 22/22 ca | An |
+| CP4 | **spec.md đầy đủ số khảo sát** | Cả team |
+| CP5 | Chạy golden set 3 lượt, xong dry run | Cường |
 | CP6 | Demo | Cả team |
-
-**Việc khẩn nhất:** khảo sát. Không có §2 thì R1 (15đ) mất trắng và toàn bộ luận điểm sụp, bất kể code chạy tốt đến đâu.
 
 ---
 
