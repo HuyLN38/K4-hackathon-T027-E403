@@ -1,0 +1,2 @@
+{"measured_at": 1785470601.154115, "model": "gemma3:4b", "cases": 22, "Chẩn đoán nêu đúng tín hiệu": 100.0, "Tin nhắn qua message_must": 100.0, "Không bịa thông tin ngoài log": 100.0, "Latency mỗi ca (p95)": 3.2, "all_ok": true}
+{"measured_at": 1785470723.586441, "model": "gemma3:4b", "cases": 22, "Chẩn đoán nêu đúng tín hiệu": 100.0, "Tin nhắn qua message_must": 100.0, "Không bịa thông tin ngoài log": 100.0, "Latency mỗi ca (p95)": 3.2, "all_ok": true}
