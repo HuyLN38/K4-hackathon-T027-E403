@@ -1,0 +1,21 @@
+case_id,input_log,expected_risk,actual_risk,risk_match,expected_signals,fired_signals,missing_signals,forbidden_fired,signals_ok,pass
+G01,5 buổi có mặt đúng giờ,ok,ok,1,,,,,1,1
+G02,"4 buổi có mặt, 1 buổi vắng",ok,ok,1,,,,,1,1
+G03,"muộn 15' hai buổi, 3 buổi đúng giờ",ok,ok,1,,,,,1,1
+G04,"muộn 1', 3', 7' rồi đúng giờ",ok,ok,1,,,,,1,1
+G05,"đúng giờ, muộn 5', rồi đúng giờ trở lại",ok,ok,1,,,,,1,1
+G06,"1 buổi vắng, 2 buổi muộn 12', còn lại đúng giờ",ok,ok,1,,,,,1,1
+G07,vắng buổi 2 và buổi 4,watch,watch,1,ABSENT_WATCH,ABSENT_WATCH,,,1,1
+G08,"muộn 15', 20', 12' và 2 buổi đúng giờ",watch,watch,1,LATE_SESSIONS,LATE_SESSIONS,,,1,1
+G09,"muộn 4', 11', 19' rồi đúng giờ",watch,watch,1,INCREASING_LATENESS,INCREASING_LATENESS,,,1,1
+G10,"vắng 3 buổi rải rác, muộn 18' một buổi",at_risk,at_risk,1,ABSENT_GTE,ABSENT_GTE|ABSENT_WATCH,,,1,1
+G11,"đủ 5 buổi, 1 lần có mặt đầu giờ rồi rời lớp (EARLY_DEPARTURE)",watch,watch,1,UNRESOLVED_HIGH_FLAG,UNRESOLVED_HIGH_FLAG,,,1,1
+G12,muộn đúng 10' ba buổi liên tiếp,watch,watch,1,LATE_SESSIONS,LATE_SESSIONS,,,1,1
+G13,"vắng buổi 1, 3, 5",at_risk,at_risk,1,ABSENT_GTE,ABSENT_GTE|ABSENT_WATCH,,,1,1
+G14,"muộn 6', muộn 14', muộn 21', vắng, vắng",at_risk,at_risk,1,SILENT_AFTER_LATENESS|INCREASING_LATENESS,ABSENT_WATCH|INCREASING_LATENESS|SILENT_AFTER_LATENESS,,,1,1
+G15,vắng 4 trong 5 buổi,at_risk,at_risk,1,ABSENT_GTE,ABSENT_GTE|ABSENT_WATCH,,,1,1
+G16,"đủ 5 buổi, 2 lần có mặt đầu giờ rồi rời lớp",at_risk,at_risk,1,EARLY_DEPARTURE_REPEATED,EARLY_DEPARTURE_REPEATED,,,1,1
+G17,vắng cả 5 buổi,at_risk,at_risk,1,ABSENT_GTE,ABSENT_GTE|ABSENT_WATCH,,,1,1
+G18,"muộn 16', muộn 13', rồi vắng 3 buổi cuối",at_risk,at_risk,1,ABSENT_GTE|SILENT_AFTER_LATENESS,ABSENT_GTE|ABSENT_WATCH|SILENT_AFTER_LATENESS,,,1,1
+G19,"muộn 8', 14', 22' rồi vắng 2 buổi",at_risk,at_risk,1,SILENT_AFTER_LATENESS|INCREASING_LATENESS,ABSENT_WATCH|INCREASING_LATENESS|SILENT_AFTER_LATENESS,,,1,1
+G20,"vắng 2 buổi cuối, trước đó đúng giờ",watch,watch,1,ABSENT_WATCH,ABSENT_WATCH,,,1,1
