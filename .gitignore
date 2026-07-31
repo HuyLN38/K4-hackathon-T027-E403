@@ -1,3 +1,15 @@
 .DS_Store
 node_modules/
 *.env
+
+# môi trường Python
+.venv/
+__pycache__/
+*.pyc
+
+# dữ liệu chạy thật - không commit (là dữ liệu cá nhân của học viên)
+codebase/attendance.db*          # gồm cả -wal, -shm và bản sao lưu .bak-*
+codebase/seed_credentials.txt
+
+# pytest
+.pytest_cache/

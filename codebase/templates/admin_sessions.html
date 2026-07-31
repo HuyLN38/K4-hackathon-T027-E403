@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Buổi học{% endblock %}
+
+{% block content %}
+<main>
+  <div class="page-head">
+    <div>
+      <h1>Buổi học</h1>
+      <p>Mở điểm danh, gọi lượt 2 giữa buổi, đóng buổi để chốt số liệu.</p>
+    </div>
+    <div class="spacer"></div>
+    <a class="btn" href="/api/admin/export/attendance.csv">Xuất CSV</a>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Tạo buổi mới</h2></div>
+    <div class="field-row">
+      <div><label for="d">Ngày</label><input id="d" type="date" value="{{ today }}"></div>
+      <div><label for="t">Giờ bắt đầu</label><input id="t" type="time" value="09:00"></div>
+      <div><label for="r">Phòng</label><input id="r" type="text" value="Lab A"></div>
+      <div><label for="l">Muộn sau (phút)</label><input id="l" type="number" value="10" min="0" max="240"></div>
+    </div>
+    <div class="btn-row"><button id="create" class="primary">Tạo buổi</button></div>
+    <div id="msg" class="alert error hidden mt-md"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Danh sách buổi</h2>
+      <span class="spacer"></span>
+      <span class="hint" id="roster-note"></span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Ngày</th><th>Giờ</th><th>Phòng</th><th>Trạng thái</th>
+          <th class="num">Lượt 1</th><th class="num">Lượt 2</th><th>Lượt 2 mở lúc</th><th>Thao tác</th>
+        </tr></thead>
+        <tbody id="rows"><tr><td colspan="9" class="empty">Đang tải…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <dialog class="modal" id="live-modal">
+    <div class="modal-head">
+      <h2>Điểm danh trực tiếp — buổi <span id="live-id"></span></h2>
+      <span class="badge accent" id="live-count">–</span>
+      <span class="spacer"></span>
+      <button id="live-close">Đóng</button>
+    </div>
+    <div class="modal-body">
+      <div class="note mb-sm">
+        <strong>Điểm danh tay</strong> — dùng khi học viên mất điện thoại, máy hỏng/hết pin,
+        không vào được WiFi, hoặc thiết bị đang buộc cho mã khác mà chưa kịp nhả.
+        Bản ghi tay gắn <code>source=manual</code> kèm lý do, nên về sau không lẫn với
+        bằng chứng hệ thống tự thu.
+      </div>
+
+      <div class="field-row mb-sm">
+        <div>
+          <label for="manual-reason">Lý do nhập tay</label>
+          <select id="manual-reason"></select>
+        </div>
+        <div>
+          <label for="manual-note">Ghi chú thêm (không bắt buộc)</label>
+          <input id="manual-note" type="text" placeholder="ví dụ: để máy ở nhà">
+        </div>
+      </div>
+
+      <div class="field mb-sm">
+        <label for="live-q">Tìm học viên</label>
+        <input id="live-q" type="text" class="w-search" placeholder="mã hoặc tên">
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Mã HV</th><th class="wrap">Tên</th><th>Lượt 1</th><th>Giờ</th>
+            <th>Lượt 2</th><th>Flag</th><th class="wrap">Lý do ghi nhận thủ công</th>
+            <th>Ghi nhận thủ công</th>
+          </tr></thead>
+          <tbody id="live-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </dialog>
+</main>
+{% endblock %}
+
+{% block scripts %}<script src="/static/admin_sessions.js"></script>{% endblock %}

@@ -1,0 +1,61 @@
+{
+  "_comment": "Ngưỡng cố định, sửa ở đây - không do mô hình quyết định (spec.md §4.7).",
+
+  "network": {
+    "allowed_subnets": ["127.0.0.0/8", "::1/128", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"],
+    "enforce_subnet": true,
+    "trust_proxy_header": false
+  },
+
+  "qr": {
+    "rotate_sec": 20,
+    "grace_sec": 10,
+    "_grace_note": "Token quá hạn nhưng còn trong grace vẫn nhận, kèm flag TOKEN_GRACE_USED. Quá grace thì từ chối cứng.",
+    "module_px": 8,
+    "quiet_zone": 4
+  },
+
+  "checkin": {
+    "late_after_min": 10,
+    "second_call_window_min": 5,
+    "require_token": true,
+    "require_device_binding": true
+  },
+
+  "rate_limit": {
+    "checkin_per_ip_per_min": 20,
+    "checkin_per_student_per_min": 5,
+    "login_per_ip_per_15min": 10
+  },
+
+  "anomaly": {
+    "ip_rate_spike_count": 3,
+    "ip_rate_spike_window_sec": 5
+  },
+
+  "risk": {
+    "window_sessions": 5,
+    "watch": {
+      "absent_gte": 2,
+      "late_sessions_gte": 3,
+      "increasing_lateness_streak": 3,
+      "increasing_lateness_min_end_min": 10,
+      "_increasing_note": "Chuỗi trễ tăng dần chỉ tính khi buổi cuối của chuỗi muộn >= mức này. Không có sàn thì dao động 1'-3'-7' cũng thành tín hiệu."
+    },
+    "at_risk": {
+      "absent_gte": 3,
+      "silent_streak_after_lateness": 2,
+      "early_departure_flags_gte": 2
+    },
+    "briefing_max_cases": 5
+  },
+
+  "llm": {
+    "enabled": true,
+    "_note": "Chạy local qua Ollama, không dịch vụ ngoài, không API key. Tắt cờ này thì dashboard vẫn chạy đủ bằng rule_trace - chỉ mất phần diễn giải (§6).",
+    "base_url": "http://127.0.0.1:11434",
+    "model": "gemma3:4b",
+    "timeout_sec": 60,
+    "sql_row_limit": 200
+  }
+}

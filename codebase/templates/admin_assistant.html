@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Trợ lý{% endblock %}
+
+{% block content %}
+<main>
+  <div class="page-head">
+    <div>
+      <h1>Trợ lý</h1>
+      <p>Mô hình chạy local qua Ollama, không gửi dữ liệu ra ngoài máy này.</p>
+    </div>
+    <div class="spacer"></div>
+    <div id="llm-status" class="hint">Đang kiểm tra mô hình…</div>
+  </div>
+
+  <div class="note mb-md">
+    <strong>Mô hình không ghi được vào database.</strong> Nó chỉ đề nghị — câu truy vấn
+    chạy trên kết nối chỉ-đọc, còn đơn xin phép sau khi bóc vẫn cần bạn tự bấm điểm danh
+    tay ở màn hình buổi học. Mọi con số về chuyên cần vẫn do rule tính (§4.2).
+  </div>
+
+  <div class="card mb-md">
+    <div class="card-head"><h2>Hỏi dữ liệu bằng tiếng Việt</h2></div>
+    <div class="field">
+      <label for="q-text">Câu hỏi</label>
+      <input id="q-text" type="text" placeholder="Ai vắng nhiều nhất trong tháng này?">
+      <p class="hint">Kết quả hiện kèm <strong>câu SQL đã chạy</strong> để bạn kiểm được
+        hệ thống đã hiểu câu hỏi thành cái gì.</p>
+    </div>
+    <div class="btn-row">
+      <button id="q-run" class="primary">Hỏi</button>
+      <span class="hint" id="q-hint"></span>
+    </div>
+    <div id="q-msg" class="alert error hidden mt-md"></div>
+    <div id="q-out"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Bóc đơn xin phép</h2></div>
+    <div class="field">
+      <label for="l-text">Dán nguyên văn đơn học viên viết</label>
+      <textarea id="l-text" rows="4" spellcheck="false"
+                placeholder="Em là K4012 Hoàng Thanh Huy, mai em xin nghỉ vì phải đưa mẹ đi khám ạ. Em có giấy hẹn của bệnh viện."></textarea>
+    </div>
+    <div class="btn-row">
+      <button id="l-run" class="primary">Bóc thành dữ liệu</button>
+      <span class="hint" id="l-hint"></span>
+    </div>
+    <div id="l-msg" class="alert error hidden mt-md"></div>
+    <div id="l-out"></div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}<script src="/static/admin_assistant.js"></script>{% endblock %}

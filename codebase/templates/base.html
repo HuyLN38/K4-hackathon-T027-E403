@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}Chuyên cần lớp học{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="icon" href="data:,">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+{% block chrome %}
+<header class="topbar">
+  <div class="brand">
+    <span class="mark">VinUni</span>
+    <span class="rule"></span>
+    <span class="app">Chuyên cần</span>
+    <span class="unit">Lớp K4</span>
+  </div>
+  {% if admin %}
+  <nav class="nav">
+    <a href="/admin" class="{% if active == 'dashboard' %}active{% endif %}">Dashboard</a>
+    <a href="/admin/sessions" class="{% if active == 'sessions' %}active{% endif %}">Buổi học</a>
+    <a href="/projector" class="{% if active == 'projector' %}active{% endif %}">Máy chiếu</a>
+    <a href="/admin/roster" class="{% if active == 'roster' %}active{% endif %}">Danh sách lớp</a>
+    <a href="/admin/anomalies" class="{% if active == 'anomalies' %}active{% endif %}">Flag</a>
+    <a href="/admin/assistant" class="{% if active == 'assistant' %}active{% endif %}">Trợ lý</a>
+    <a href="/admin/audit" class="{% if active == 'audit' %}active{% endif %}">Audit</a>
+    <a href="#" id="logout">Đăng xuất</a>
+  </nav>
+  {% else %}
+  <nav class="nav">
+    <a href="/">Trang chủ</a>
+    <a href="/me">Dữ liệu của tôi</a>
+    <a href="/admin/login">Labcoach</a>
+  </nav>
+  {% endif %}
+</header>
+{% endblock %}
+
+{% block content %}{% endblock %}
+
+<script src="/static/app.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

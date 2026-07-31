@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Máy chiếu · Mã điểm danh{% endblock %}
+{% block body_class %}projector{% endblock %}
+{% block chrome %}{% endblock %}
+
+{% block content %}
+{#
+  Cả hai trạng thái (đang chiếu mã / chưa mở buổi) đều nằm sẵn trong trang và do
+  JS bật tắt. Trước đây phần mã QR chỉ render khi lúc tải trang có buổi đang mở,
+  nên mở máy chiếu trước rồi mới mở buổi thì màn hình đứng ở chữ "chưa mở buổi"
+  cho tới khi có người bấm F5 - trên tường lớp học thì không ai bấm.
+#}
+<div class="proj-wrap">
+  <div class="proj-title" id="title">Quét mã để điểm danh</div>
+  <div class="proj-sub" id="sub">
+    {%- if open_session %}
+      Buổi {{ open_session.date }} · {{ open_session.start_time }}
+      {%- if open_session.room %} · {{ open_session.room }}{% endif %}
+    {%- endif %}
+  </div>
+
+  <div id="live" class="hidden">
+    <div class="qr-frame" id="qr-frame"></div>
+    <div class="proj-meter"><i id="meter"></i></div>
+
+    <div class="proj-stats">
+      <div>
+        <div class="value" id="count">–</div>
+        <div class="label">Đã điểm danh</div>
+      </div>
+      <div>
+        <div class="value" id="call">–</div>
+        <div class="label">Lượt điểm danh</div>
+      </div>
+      <div>
+        <div class="value" id="secs">–</div>
+        <div class="label">Giây còn lại</div>
+      </div>
+    </div>
+
+    <div class="proj-url" id="url"></div>
+  </div>
+
+  <div id="idle" class="hidden">
+    <div class="proj-sub">
+      Vào <strong>Buổi học</strong> và bấm “Mở điểm danh” — mã QR sẽ tự hiện ở đây.
+    </div>
+  </div>
+
+  <div class="proj-actions">
+    <button id="rotate" disabled>Đổi mã ngay</button>
+    <a class="btn" href="/admin/sessions">Quản lý buổi học</a>
+  </div>
+  <div id="err" class="alert error hidden"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="/static/projector.js"></script>{% endblock %}

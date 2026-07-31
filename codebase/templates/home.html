@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Điểm danh · Chuyên cần lớp học{% endblock %}
+
+{% block content %}
+<main class="narrow">
+  <div class="page-head">
+    <div>
+      <h1>Điểm danh lớp học</h1>
+      <p>Quét mã QR trên máy chiếu để ghi nhận có mặt.</p>
+    </div>
+  </div>
+
+  {% if open_session %}
+  <div class="card">
+    <div class="card-head">
+      <h2>Buổi đang mở</h2>
+      <span class="badge accent">Lượt {{ open_session.call_index }}</span>
+    </div>
+    <p>{{ open_session.date }} · {{ open_session.start_time }}{% if open_session.room %} · {{ open_session.room }}{% endif %}</p>
+    <div class="note">
+      Mở camera điện thoại và quét mã QR đang hiện trên máy chiếu. Mã đổi liên tục,
+      nên phải quét mã đang hiển thị tại thời điểm đó.
+    </div>
+  </div>
+  {% else %}
+  <div class="card">
+    <h2>Chưa có buổi nào mở điểm danh</h2>
+    <p class="hint">Khi Labcoach mở buổi học, mã QR sẽ hiện trên máy chiếu.</p>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <h2>Dữ liệu của bạn</h2>
+    <p class="hint">
+      Bạn xem được toàn bộ bản ghi chuyên cần của chính mình, mức rủi ro hiện tại và
+      lý do hệ thống xếp mức đó.
+    </p>
+    <a class="btn" href="/me">Mở trang dữ liệu của tôi</a>
+  </div>
+</main>
+{% endblock %}

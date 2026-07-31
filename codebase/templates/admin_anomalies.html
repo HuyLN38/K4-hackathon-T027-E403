@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Flag{% endblock %}
+
+{% block content %}
+<main>
+  <div class="page-head">
+    <div>
+      <h1>Flag</h1>
+      <p>Sáu rule deterministic (§4.6). <code>DEVICE_REUSE</code> và <code>DEVICE_MISMATCH</code> chặn trước khi ghi;
+         các rule còn lại vẫn ghi nhưng để lại flag. Mỗi flag cần người xử lý, không tự mất.</p>
+    </div>
+    <div class="spacer"></div>
+    <div class="btn-row">
+      <button id="tab-open" class="primary">Chưa xử lý</button>
+      <button id="tab-done">Đã xử lý</button>
+      <button id="toggle-group">Xem từng flag</button>
+    </div>
+  </div>
+
+  <div class="note mb-md" id="mode-note"></div>
+
+  <div class="grid cols-4 mb-md" id="by-rule"></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr id="head-row"></tr></thead>
+      <tbody id="rows"><tr><td colspan="9" class="empty">Đang tải…</td></tr></tbody>
+    </table>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}<script src="/static/admin_anomalies.js"></script>{% endblock %}

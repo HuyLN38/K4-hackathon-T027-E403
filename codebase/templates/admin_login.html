@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Đăng nhập Labcoach{% endblock %}
+
+{% block content %}
+<main class="narrow">
+  <div class="card mt-xl">
+    <h1>Đăng nhập Labcoach</h1>
+    <p class="hint">Trang quản lý chuyên cần của lớp.</p>
+    <div class="field">
+      <label for="u">Tên đăng nhập</label>
+      <input id="u" type="text" autocomplete="username" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="p">Mật khẩu</label>
+      <input id="p" type="password" autocomplete="current-password">
+    </div>
+    <button id="go" class="primary big">Đăng nhập</button>
+    <div id="msg" class="alert error hidden mt-md"></div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}<script src="/static/admin_login.js"></script>{% endblock %}

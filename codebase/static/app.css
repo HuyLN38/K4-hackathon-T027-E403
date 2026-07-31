@@ -1,0 +1,621 @@
+/* Hệ thống chuyên cần - stylesheet duy nhất, không phụ thuộc CDN (CSP chỉ cho 'self').
+ *
+ * Hướng thị giác: đại học tinh hoa Việt Nam - mực đậm ngả mận, đỏ mận (burgundy)
+ * và vàng đồng trầm trên nền kem ấm. Đây là *tinh thần* nhận diện VinUni dựng lại
+ * theo trí nhớ, KHÔNG phải bộ nhận diện chính thức: không dùng logo/crest, chỉ
+ * dùng wordmark chữ. Có brand book thật thì thay đúng mã màu vào khối token này
+ * là toàn bộ app đổi theo.
+ *
+ * Hai ràng buộc định hình cách làm:
+ *   - CSP `default-src 'self'` + máy lớp học có thể offline -> KHÔNG webfont.
+ *     Sang trọng phải đến từ serif có sẵn trong máy, khoảng thở, và giãn chữ.
+ *   - Đây là công cụ ghi nhận chuyên cần, không phải trang giới thiệu. Màu ngữ
+ *     nghĩa (có mặt / muộn / vắng) phải đọc được ngay, nên chúng giữ độ tương phản
+ *     cao chứ không bị làm nhạt đi cho "đẹp".
+ */
+
+:root {
+  /* Nền kem ấm thay vì xám xanh: giấy, không phải bảng điều khiển. */
+  --bg: #faf7f2;
+  --surface: #ffffff;
+  --surface-2: #f4efe7;
+  --border: #e6ddd0;
+  --text: #1b1417;
+  --text-dim: #6b5f63;
+
+  /* Đỏ mận là màu hành động chính, cũng là màu mức rủi ro cao nhất - trùng nhau
+     có chủ ý: việc chính của trang này chính là xử lý nhóm nguy cơ. */
+  --accent: #7a1f2b;
+  --accent-soft: #f6e9ea;
+  --gold: #a8842c;
+  --gold-soft: #f5ecd8;
+
+  --ok: #1f6b4a;
+  --ok-soft: #e6f1ea;
+  --watch: #8a6410;
+  --watch-soft: #fbf0dc;
+  --risk: #93202c;
+  --risk-soft: #f8e7e8;
+
+  --radius: 8px;
+  --shadow: 0 1px 2px rgb(60 30 35 / 5%), 0 8px 26px rgb(60 30 35 / 6%);
+
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  /* Serif có sẵn trên máy. Ưu tiên các face phủ đủ dấu tiếng Việt. */
+  --display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
+             "Noto Serif", "Liberation Serif", serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14100f;
+    --surface: #1d1719;
+    --surface-2: #271f21;
+    --border: #362b2e;
+    --text: #f2ebe6;
+    --text-dim: #a8999a;
+    --accent: #d98a94;
+    --accent-soft: #2e1a1e;
+    --gold: #d9b463;
+    --gold-soft: #2b2318;
+    --ok: #6cc79a;
+    --ok-soft: #16271f;
+    --watch: #dfae5e;
+    --watch-soft: #2b2317;
+    --risk: #e08c93;
+    --risk-soft: #301a1d;
+    --shadow: 0 1px 2px rgb(0 0 0 / 35%), 0 10px 30px rgb(0 0 0 / 30%);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Serif chỉ dùng cho tiêu đề và tên người - nơi chữ đóng vai trò "mặt tiền".
+   Phần thân và giao diện giữ sans để đọc dữ liệu vẫn nhanh. */
+h1, h2, h3 {
+  font-family: var(--display);
+  line-height: 1.2; margin: 0 0 .5rem; font-weight: 600; letter-spacing: -.005em;
+}
+h1 { font-size: 1.85rem; }
+h2 { font-size: 1.2rem; }
+h3 { font-size: 1rem; }
+p { margin: 0 0 .75rem; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 2px; }
+code, .mono { font-family: var(--mono); font-size: .875em; }
+strong, b { font-weight: 640; }
+
+/* ---------------- layout ---------------- */
+/* Thanh trên: nền mực đậm, gạch chân vàng đồng một sợi. Sợi vàng là chi tiết
+   "sang" duy nhất ở phần khung - đắt vì hiếm, nên không lặp lại ở chỗ khác. */
+.topbar {
+  display: flex; align-items: center; gap: 1.25rem;
+  padding: .75rem 1.5rem;
+  background: #1b1417;
+  border-bottom: 2px solid var(--gold);
+  position: sticky; top: 0; z-index: 20;
+  flex-wrap: wrap;
+}
+.brand {
+  margin-right: auto; display: flex; align-items: baseline; gap: .6rem;
+  font-family: var(--display); color: #fdfbf8;
+}
+.brand .mark {
+  font-size: 1.22rem; font-weight: 600; letter-spacing: .01em;
+  color: var(--gold);
+}
+.brand .rule { width: 1px; height: 1.05em; background: rgb(253 251 248 / 28%); align-self: center; }
+.brand .app { font-size: 1.02rem; font-weight: 500; letter-spacing: .01em; }
+.brand .unit {
+  font-family: system-ui, sans-serif; font-size: .74rem; font-weight: 500;
+  letter-spacing: .11em; text-transform: uppercase; color: rgb(253 251 248 / 62%);
+}
+.nav { display: flex; gap: .1rem; flex-wrap: wrap; }
+.nav a {
+  padding: .4rem .75rem; border-radius: 6px; color: rgb(253 251 248 / 72%);
+  font-size: .88rem; font-weight: 500; letter-spacing: .005em;
+}
+.nav a:hover { background: rgb(253 251 248 / 10%); text-decoration: none; color: #fdfbf8; }
+.nav a.active { background: rgb(253 251 248 / 14%); color: #fff; box-shadow: inset 0 -2px 0 var(--gold); }
+
+main { max-width: 1180px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+main.narrow { max-width: 560px; }
+.page-head { display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.page-head p { color: var(--text-dim); margin: 0; }
+.page-head .spacer { margin-left: auto; }
+
+/* ---------------- surfaces ---------------- */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.3rem 1.5rem; box-shadow: var(--shadow);
+}
+.card + .card { margin-top: 1rem; }
+.card-head { display: flex; align-items: center; gap: .75rem; margin-bottom: .85rem; flex-wrap: wrap; }
+.card-head h2, .card-head h3 { margin: 0; }
+.card-head .spacer { margin-left: auto; }
+
+.grid { display: grid; gap: 1rem; }
+.grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.grid.cols-4 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .9rem 1rem; }
+.stat .label { color: var(--text-dim); font-size: .72rem; text-transform: uppercase; letter-spacing: .11em; font-weight: 600; }
+.stat .value {
+  font-family: var(--display); font-size: 2.1rem; font-weight: 600;
+  letter-spacing: -.02em; margin-top: .2rem; font-variant-numeric: tabular-nums;
+}
+.stat .sub { color: var(--text-dim); font-size: .82rem; }
+
+/* ---------------- controls ---------------- */
+label { display: block; font-size: .85rem; font-weight: 600; margin-bottom: .3rem; color: var(--text-dim); }
+input, select, textarea, button { font: inherit; }
+input[type=text], input[type=password], input[type=date], input[type=time], input[type=number], select, textarea {
+  width: 100%; padding: .55rem .7rem; border: 1px solid var(--border);
+  border-radius: 8px; background: var(--surface); color: var(--text);
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 1px;
+}
+.field { margin-bottom: .9rem; }
+.field-row { display: flex; gap: .75rem; flex-wrap: wrap; }
+.field-row > * { flex: 1 1 140px; }
+
+button, .btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  padding: .5rem 1rem; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); cursor: pointer; font-weight: 560;
+  font-size: .89rem; white-space: nowrap; letter-spacing: .005em;
+  transition: background .15s ease, border-color .15s ease;
+}
+button:hover, .btn:hover { background: var(--surface-2); border-color: #d6c9b8; text-decoration: none; }
+button.primary, .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.primary:hover, .btn.primary:hover { background: #62161f; border-color: #62161f; }
+button.danger { color: var(--risk); border-color: var(--risk); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button.big { padding: .8rem 1.1rem; font-size: 1rem; width: 100%; }
+.btn-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+.btn-row.center { justify-content: center; }
+
+/* ---------------- badges ---------------- */
+.badge {
+  display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .5rem;
+  border-radius: 999px; font-size: .76rem; font-weight: 650; white-space: nowrap;
+  background: var(--surface-2); color: var(--text-dim);
+}
+.badge.ok       { background: var(--ok-soft);    color: var(--ok); }
+.badge.watch    { background: var(--watch-soft); color: var(--watch); }
+.badge.at_risk  { background: var(--risk-soft);  color: var(--risk); }
+.badge.high     { background: var(--risk-soft);  color: var(--risk); }
+.badge.med      { background: var(--watch-soft); color: var(--watch); }
+.badge.low      { background: var(--surface-2);  color: var(--text-dim); }
+.badge.accent   { background: var(--accent-soft); color: var(--accent); }
+.badge.present  { background: var(--ok-soft);    color: var(--ok); }
+.badge.late     { background: var(--watch-soft); color: var(--watch); }
+.badge.absent   { background: var(--risk-soft);  color: var(--risk); }
+.badge.manual   { background: var(--accent-soft); color: var(--accent); }
+
+/* ---------------- tables ---------------- */
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { padding: .4rem .75rem; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+/* Tiêu đề được phép xuống dòng, ô dữ liệu thì không.
+   Cột chỉ chứa một con số nhưng mang tên đầy đủ ("Cảnh báo chưa xử lý") thì chính
+   tiêu đề kéo cột rộng ra 180px cho một chữ số - cộng lại là bảng tràn ngang. Cho
+   tiêu đề gãy dòng thì giữ được tên đúng nghĩa mà cột vẫn hẹp bằng nội dung. */
+th {
+  background: var(--surface-2); font-size: .71rem; text-transform: uppercase;
+  letter-spacing: .08em; font-weight: 650; color: var(--text-dim);
+  position: sticky; top: 0; white-space: normal; line-height: 1.25;
+  vertical-align: bottom;
+}
+/* Tiêu đề ngắn không có lý do gì phải gãy dòng. */
+th.nowrap { white-space: nowrap; }
+th.num { text-align: right; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--surface-2); }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.wrap, th.wrap { white-space: normal; min-width: 150px; }
+
+/* Nấc bề rộng cho ô văn bản dài. Không có nấc thì mọi cột .wrap đều nở tới 24rem
+   và hai ba cột như thế là bảng phải kéo ngang. */
+th.w-sm, td.w-sm { min-width: 96px; max-width: 11rem; }
+th.w-md, td.w-md { min-width: 130px; max-width: 15rem; }
+
+/* Mọi dòng cao bằng nhau, kể cả dòng có nút và dòng chỉ có chữ.
+   `height` trên <td> được tính như chiều cao tối thiểu, nên chỉ cần giữ mọi thứ
+   bên trong thấp hơn con số này là tất cả các dòng cao đúng bằng nhau. Nút trong
+   bảng vì thế phải nhỏ hơn nút thường và không được xuống dòng. */
+tbody td { height: 2.9rem; vertical-align: middle; }
+/* Ô văn bản dài bị cắt bằng ellipsis chứ không xuống dòng: xuống dòng là nguyên
+   nhân chính làm dòng cao không đều (một dòng 58px, dòng khác 80px). Nội dung đầy
+   đủ vẫn đọc được qua tooltip `title`. */
+tbody td.wrap {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 18rem;
+}
+tbody td.w-sm { max-width: 11rem; }
+tbody td.w-md { max-width: 15rem; }
+table .btn-row { flex-wrap: nowrap; gap: .3rem; }
+table .btn-row button, table .btn-row .btn {
+  padding: .2rem .5rem; font-size: .8rem; line-height: 1.35; min-height: 1.85rem;
+}
+table .badge { vertical-align: middle; }
+
+/* ---------------- đầu ra của mô hình ---------------- */
+/* Chữ do mô hình sinh phải trông khác chữ do hệ thống tính: người đọc cần biết
+   ngay câu nào truy vết được về một rule và câu nào chỉ là diễn giải. */
+.llm-text {
+  border-left: 3px solid var(--gold); background: var(--surface-2);
+  padding: .7rem .9rem; border-radius: 0 8px 8px 0; white-space: pre-wrap;
+  line-height: 1.6;
+}
+.sql-out {
+  font-family: var(--mono); font-size: .82rem; white-space: pre-wrap; margin: .4rem 0 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  padding: .55rem .7rem; overflow-x: auto;
+}
+
+/* ---------------- messages ---------------- */
+.note, .alert {
+  border-radius: 8px; padding: .7rem .85rem; font-size: .9rem;
+  border: 1px solid var(--border); background: var(--surface-2);
+}
+.alert.error { background: var(--risk-soft); border-color: transparent; color: var(--risk); }
+.alert.success { background: var(--ok-soft); border-color: transparent; color: var(--ok); }
+.alert.warn { background: var(--watch-soft); border-color: transparent; color: var(--watch); }
+.hint { color: var(--text-dim); font-size: .85rem; }
+.empty { color: var(--text-dim); text-align: center; padding: 2.5rem 1rem; }
+.empty p { margin: 0 0 1rem; }
+.hidden { display: none !important; }
+
+/* ---------------- lớp tiện dụng ----------------
+   CSP của app là `style-src 'self'`, nên không dùng được thuộc tính style="…"
+   trong markup: trình duyệt chặn thẳng. Mọi khoảng cách nhỏ đi qua các lớp dưới
+   đây. Đây là ràng buộc bảo mật có thật, không phải sở thích code style — bug này
+   chỉ lộ ra khi mở app bằng trình duyệt thật. */
+.mt-xs { margin-top: .4rem; }
+.mt-sm { margin-top: .7rem; }
+.mt-md { margin-top: .85rem; }
+.mt-lg { margin-top: 1rem; }
+.mt-xl { margin-top: 2rem; }
+.mb-sm { margin-bottom: .8rem; }
+.mb-md { margin-bottom: 1rem; }
+.w-auto { width: auto; }
+.w-search { width: 240px; max-width: 100%; }
+.bold { font-weight: 650; }
+.v-ok { color: var(--ok); }
+.v-watch { color: var(--watch); }
+.v-risk { color: var(--risk); }
+.v-accent { color: var(--accent); }
+
+/* ---------------- trace / giải thích ---------------- */
+.trace { background: var(--surface-2); border-radius: 8px; padding: .7rem .85rem; font-size: .87rem; }
+.trace ul { margin: .35rem 0 0; padding-left: 1.1rem; }
+.trace li { margin-bottom: .2rem; }
+.signal-code { font-family: var(--mono); font-size: .8rem; background: var(--surface); padding: .05rem .3rem; border-radius: 4px; border: 1px solid var(--border); }
+
+.timeline { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .5rem; }
+.dot {
+  width: 2.1rem; height: 2.1rem; border-radius: 7px; display: grid; place-items: center;
+  font-size: .7rem; font-weight: 680; background: var(--ok-soft); color: var(--ok);
+}
+.dot.late { background: var(--watch-soft); color: var(--watch); }
+.dot.absent { background: var(--risk-soft); color: var(--risk); }
+
+/* ---------------- Dashboard: bản tin đầu ngày ----------------
+   Đây không phải màn hình phân tích số liệu, mà là **danh sách gọi tên buổi
+   sáng**: đọc 5 cái tên, hiểu vì sao, quyết định nhắn ai. Nên thứ được phóng to
+   là *dải điểm danh* của từng người - đúng cái tín hiệu mà §1 nói là "rất rõ
+   nhưng không ai nhìn thấy trong lúc nó đang diễn ra". Các con số tổng (ổn / theo
+   dõi / nguy cơ) là bối cảnh, bị thu xuống một thanh tỉ lệ một dòng.
+
+   Không dùng webfont: CSP chỉ cho 'self' và máy lớp học có thể không có mạng.
+   Tính cách chữ vì thế đến từ cỡ, độ đậm và giãn chữ. */
+
+.lead {
+  font-family: var(--display); font-size: clamp(1.2rem, 2.4vw, 1.5rem);
+  font-weight: 400; letter-spacing: -.005em; line-height: 1.35; margin: 0;
+  color: var(--text-dim);
+}
+.lead b { color: var(--text); }
+.lead b { font-weight: 730; }
+.lead .n { font-variant-numeric: tabular-nums; }
+
+/* ---------------- chọn ngày ----------------
+   Ô <input type="date"> gốc của trình duyệt trông khác nhau trên mỗi hệ điều hành
+   và không nói được gì ngoài con số. Thay bằng thanh điều hướng ngày: 99% thời
+   gian Labcoach chỉ cần "hôm nay" và "hôm qua", nên hai mũi tên là đường chính,
+   còn lịch tháng chỉ mở khi cần nhảy xa. */
+.date-nav { position: relative; display: flex; align-items: stretch; gap: .3rem; }
+.daynav-arrow {
+  padding: 0 .7rem; font-size: 1.15rem; line-height: 1; color: var(--text-dim);
+  min-width: 2.3rem;
+}
+.daynav-arrow:disabled { opacity: .3; }
+.daynav-label {
+  flex-direction: column; align-items: flex-start; gap: 0;
+  padding: .38rem .95rem; min-width: 12.5rem; text-align: left;
+}
+.daynav-label #day-weekday {
+  font-size: .68rem; text-transform: uppercase; letter-spacing: .12em;
+  color: var(--text-dim); font-weight: 600;
+}
+.daynav-label #day-full {
+  font-family: var(--display); font-size: 1.02rem; font-weight: 600; letter-spacing: -.005em;
+}
+.daynav-today { color: var(--accent); border-color: var(--accent); }
+
+.cal {
+  position: absolute; top: calc(100% + .5rem); right: 0; z-index: 40;
+  width: 19rem; padding: .85rem; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.cal-head { display: flex; align-items: center; gap: .4rem; margin-bottom: .6rem; }
+.cal-head span {
+  flex: 1; text-align: center; font-family: var(--display);
+  font-size: 1rem; font-weight: 600;
+}
+.cal-head button { padding: .15rem .55rem; font-size: 1.05rem; line-height: 1.2; color: var(--text-dim); }
+.cal-dow, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.cal-dow span {
+  text-align: center; font-size: .66rem; font-weight: 650; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: .06em; padding-bottom: .3rem;
+}
+.cal-day {
+  position: relative; aspect-ratio: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: .12rem;
+  border: none; background: transparent; border-radius: 6px;
+  font-size: .86rem; font-variant-numeric: tabular-nums; color: var(--text);
+  padding: 0; min-width: 0;
+}
+.cal-day:hover:not(:disabled) { background: var(--surface-2); }
+.cal-day:disabled { color: var(--text-dim); opacity: .38; cursor: default; }
+.cal-day.other { visibility: hidden; }
+.cal-day.today { box-shadow: inset 0 0 0 1px var(--gold); font-weight: 650; }
+.cal-day.selected { background: var(--accent); color: #fff; font-weight: 650; }
+.cal-day.selected:hover { background: var(--accent); }
+.dot-session {
+  width: 4px; height: 4px; border-radius: 50%; background: var(--gold);
+  display: block; flex: none;
+}
+.cal-day.selected .dot-session { background: rgb(255 255 255 / 85%); }
+.cal-day .dot-slot { height: 4px; display: flex; align-items: center; }
+.cal-legend {
+  margin: .6rem 0 0; font-size: .74rem; color: var(--text-dim);
+  display: flex; align-items: center; gap: .35rem;
+}
+
+@media (max-width: 560px) {
+  .daynav-label { min-width: 9.5rem; }
+  .cal { right: auto; left: 0; width: min(19rem, calc(100vw - 2.5rem)); }
+}
+
+.dist { display: flex; height: 9px; border-radius: 999px; overflow: hidden; background: var(--surface-2); }
+.dist i { display: block; transition: width .4s ease; }
+.d-at_risk { background: var(--risk); }
+.d-watch   { background: var(--watch); }
+.d-ok      { background: var(--ok); }
+.dist-legend { display: flex; gap: 1.4rem; flex-wrap: wrap; margin-top: .6rem; font-size: .87rem; color: var(--text-dim); }
+.dist-legend b { color: var(--text); font-variant-numeric: tabular-nums; }
+.dist-legend > span { display: inline-flex; align-items: center; gap: .4rem; }
+.dist-legend .spacer { margin-left: auto; }
+.dist-legend .swatch { width: .62rem; height: .62rem; border-radius: 2px; flex: none; }
+
+/* Một ca cần liên hệ. Số thứ tự là thứ tự ưu tiên thật (at_risk trước, vắng
+   nhiều trước), không phải trang trí - nên nó được phép hiện. */
+.case {
+  display: grid; grid-template-columns: 2.6rem 1fr; column-gap: 1.1rem;
+  padding: 1.15rem 1.3rem 1.2rem; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  border-left-width: 3px; border-left-color: var(--border);
+}
+.case + .case { margin-top: .7rem; }
+.case.at_risk { border-left-color: var(--risk); }
+.case.watch   { border-left-color: var(--watch); }
+.case-rank {
+  font-family: var(--display); font-size: 1.5rem; font-weight: 500;
+  color: var(--gold); line-height: 1.1; font-variant-numeric: tabular-nums;
+}
+.case-main { min-width: 0; }
+.case-head { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; margin-bottom: .9rem; }
+.case-name { font-family: var(--display); font-size: 1.42rem; font-weight: 600; letter-spacing: -.01em; line-height: 1.2; }
+.case-head .spacer { margin-left: auto; }
+
+/* Dải điểm danh - phần chữ ký của trang. Đọc ngang là thấy ngay câu chuyện:
+   muộn, muộn hơn, muộn nữa, vắng, vắng. */
+.strip { display: flex; gap: .3rem; flex-wrap: wrap; }
+.strip-cell { width: 3rem; }
+.strip-mark {
+  height: 3rem; border-radius: 9px; display: grid; place-items: center;
+  font-family: var(--mono); font-size: .92rem; font-weight: 680;
+  background: var(--ok-soft); color: var(--ok);
+}
+.strip-mark.late   { background: var(--watch-soft); color: var(--watch); }
+.strip-mark.absent { background: var(--risk-soft);  color: var(--risk); }
+.strip-date {
+  margin-top: .3rem; text-align: center; font-family: var(--mono);
+  font-size: .68rem; color: var(--text-dim); letter-spacing: .02em;
+}
+
+.signals { margin: 1rem 0 0; padding: 0; list-style: none; }
+.signals li {
+  display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap;
+  padding: .3rem 0; border-top: 1px solid var(--border); font-size: .93rem;
+}
+.signals li:first-child { border-top: none; }
+.signals .why { font-weight: 550; }
+.signals .measure { color: var(--text-dim); font-variant-numeric: tabular-nums; font-size: .85rem; }
+.signals .code {
+  margin-left: auto; font-family: var(--mono); font-size: .72rem; color: var(--text-dim);
+  background: var(--surface-2); padding: .1rem .4rem; border-radius: 4px;
+}
+
+.case-foot { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin-top: 1rem; }
+.case-foot .spacer { margin-left: auto; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .case { animation: case-in .28s ease both; }
+  @keyframes case-in { from { opacity: 0; transform: translateY(6px); } }
+}
+
+@media (max-width: 560px) {
+  .case { grid-template-columns: 1fr; }
+  .case-rank { display: none; }
+  .strip-cell { width: 2.7rem; }
+}
+
+/* ---------------- máy chiếu ----------------
+   Màn hình này chiếu lên tường giảng đường trước cả lớp, nên nó là bề mặt "nghi
+   thức" nhất: nền mực đậm, khung vàng đồng quanh mã QR, tiêu đề serif. Chữ phải
+   đọc được từ cuối phòng nên mọi cỡ đều theo viewport. */
+body.projector { background: #120e10; color: #f6f1ea; }
+.proj-wrap {
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 1.35rem; padding: 2.5rem 1rem;
+}
+.proj-title {
+  font-family: var(--display); font-size: clamp(1.5rem, 3.2vw, 2.6rem);
+  font-weight: 500; letter-spacing: -.01em; text-align: center; color: #fdfbf8;
+}
+.proj-sub {
+  color: #b6a79c; font-size: clamp(.95rem, 1.6vw, 1.15rem); text-align: center;
+  letter-spacing: .04em;
+}
+.qr-frame {
+  background: #fff; padding: 1.1rem; border-radius: 6px; line-height: 0;
+  box-shadow: 0 0 0 1px #a8842c, 0 0 0 9px #120e10, 0 0 0 10px rgb(168 132 44 / 45%),
+              0 26px 70px rgb(0 0 0 / 55%);
+}
+.qr-frame svg { width: min(50vh, 80vw); height: auto; display: block; }
+/* #live gói cả khối "đang chiếu mã" để JS bật tắt một lần; phải tự giữ trục dọc
+   vì nó không còn là con trực tiếp của .proj-wrap. */
+#live {
+  display: flex; flex-direction: column; align-items: center; gap: 1.35rem;
+}
+/* Mã hết hạn mà chưa xin được mã mới. Mã chết trông y hệt mã sống, nên phải nói
+   ra bằng mắt - cả phòng đang nhìn vào đúng ô này. */
+.qr-frame.stale { opacity: .25; filter: grayscale(1); transition: opacity .2s linear; }
+.proj-meter { width: min(50vh, 80vw); height: 5px; background: #2a2124; border-radius: 999px; overflow: hidden; }
+.proj-meter i { display: block; height: 100%; background: var(--gold); transition: width .25s linear; }
+.proj-stats { display: flex; gap: clamp(1.5rem, 5vw, 4rem); text-align: center; flex-wrap: wrap; justify-content: center; }
+.proj-stats .value {
+  font-family: var(--display); font-size: clamp(1.9rem, 5vw, 3.4rem); font-weight: 500;
+  letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: #fdfbf8;
+}
+.proj-stats .label {
+  color: #a8998e; font-size: .76rem; text-transform: uppercase; letter-spacing: .14em;
+  margin-top: .2rem;
+}
+.proj-url { font-family: var(--mono); font-size: clamp(.72rem, 1.3vw, .95rem); color: #7d6f66; word-break: break-all; text-align: center; }
+.proj-actions { display: flex; gap: .5rem; }
+/* Mọi nút trên màn chiếu đều là nút viền mờ, kể cả nút ở trạng thái rỗng - nút
+   trắng đặc trên nền mực chói mắt khi chiếu lên tường. */
+body.projector button, body.projector .btn {
+  background: transparent; border-color: rgb(246 241 234 / 26%); color: #e9e0d6;
+}
+body.projector button:hover, body.projector .btn:hover {
+  background: rgb(246 241 234 / 10%); border-color: var(--gold); color: #fff;
+}
+
+/* ---------------- popup (dialog) ---------------- */
+dialog.modal {
+  border: 1px solid var(--border); border-radius: 10px; padding: 0;
+  background: var(--surface); color: var(--text);
+  width: min(1340px, 96vw); max-width: 96vw; max-height: 90vh;
+}
+/* Bảng điểm danh trực tiếp cần cả chiều ngang; biểu mẫu thì không - popup rộng
+   1340px cho một form 620px để lại nửa panel trống. */
+dialog.modal.compact {
+  width: min(700px, 94vw);
+  box-shadow: 0 24px 70px rgb(0 0 0 / 35%);
+}
+dialog.modal::backdrop { background: rgb(27 20 23 / 66%); }
+dialog.modal[open] { display: flex; flex-direction: column; }
+.modal-head {
+  display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+  padding: .9rem 1.15rem; border-bottom: 1px solid var(--border);
+  background: var(--surface-2); border-radius: 10px 10px 0 0;
+}
+.modal-head h2 { margin: 0; font-size: 1.05rem; }
+.modal-head .spacer { margin-left: auto; }
+.modal-body { padding: 1.05rem 1.15rem; overflow: auto; }
+.modal-body > .table-wrap { max-height: 52vh; overflow: auto; }
+
+/* ---------------- biểu mẫu trong popup ---------------- */
+.form-narrow { max-width: 620px; }
+
+/* Giá trị không sửa được hiện như nhãn tĩnh, không phải input bị khoá: input
+   disabled trông như giao diện hỏng, nhãn nói rõ đây là dữ liệu cố định. */
+.fixed-value {
+  display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap;
+  padding: .5rem .7rem; border-radius: 8px;
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+.fixed-value .mono { font-size: 1.05rem; font-weight: 650; letter-spacing: .04em; }
+
+.choice { border: 1px solid var(--border); border-radius: var(--radius); padding: .9rem 1rem; margin: 0 0 .9rem; }
+.choice legend {
+  padding: 0 .4rem; font-size: .85rem; font-weight: 600; color: var(--text-dim);
+}
+.choice-item { display: flex; gap: .6rem; align-items: flex-start; font-weight: 400; margin-bottom: .55rem; }
+.choice-item input[type=radio] { margin-top: .25rem; width: auto; flex: none; accent-color: var(--accent); }
+.choice-item b { font-weight: 620; }
+.choice-item input[type=text] { margin-top: .35rem; max-width: 12rem; }
+
+.danger-zone { margin-top: 1.4rem; padding-top: 1.1rem; border-top: 1px solid var(--border); }
+.danger-zone h3 { font-size: .85rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim); }
+
+/* ---------------- check-in ---------------- */
+.checkin-shell { max-width: 460px; margin: 0 auto; padding: 1.5rem 1.15rem 3rem; }
+.checkin-shell h1 { font-size: 1.35rem; }
+#sid { font-size: 1.5rem; text-align: center; letter-spacing: .12em; font-family: var(--mono); text-transform: uppercase; padding: .75rem; }
+
+/* Thẻ xác nhận sau khi điểm danh: học viên phải tự soát "đúng người chưa". */
+.confirm { text-align: center; }
+.confirm-mark {
+  width: 4.2rem; height: 4.2rem; margin: 0 auto .85rem; border-radius: 50%;
+  display: grid; place-items: center; font-size: 2.1rem;
+  background: var(--ok-soft); color: var(--ok);
+}
+.confirm-mark.late { background: var(--watch-soft); color: var(--watch); }
+.confirm-name {
+  font-family: var(--display); font-size: clamp(1.55rem, 6.5vw, 2.05rem);
+  font-weight: 600; letter-spacing: -.01em; line-height: 1.2; margin-bottom: .3rem;
+}
+.confirm-id {
+  font-family: var(--mono); font-size: 1.1rem; color: var(--accent);
+  background: var(--accent-soft); display: inline-block;
+  padding: .15rem .6rem; border-radius: 7px; letter-spacing: .06em;
+}
+.confirm-status { margin: .9rem 0; font-size: 1.05rem; font-weight: 600; }
+.confirm-facts {
+  text-align: left; border: 1px solid var(--border); border-radius: 10px;
+  overflow: hidden; margin: 1rem 0;
+}
+.confirm-facts div {
+  display: flex; gap: .75rem; padding: .5rem .8rem; font-size: .92rem;
+  border-bottom: 1px solid var(--border);
+}
+.confirm-facts div:last-child { border-bottom: none; }
+.confirm-facts .k { color: var(--text-dim); flex: 0 0 auto; }
+.confirm-facts .v { font-weight: 600; margin-left: auto; text-align: right; white-space: nowrap; }
+.confirm-check {
+  background: var(--accent-soft); border-radius: 10px; padding: .8rem .9rem;
+  font-size: .95rem; text-align: left;
+}
+.confirm-check strong { display: block; margin-bottom: .2rem; }
+
+@media (max-width: 640px) {
+  main { padding: 1rem .9rem 3rem; }
+  .topbar { padding: .6rem .9rem; gap: .6rem; }
+  th, td { padding: .5rem .6rem; }
+}
+
+@media print { .topbar, .btn-row, button { display: none !important; } }

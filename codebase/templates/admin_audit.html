@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Audit log{% endblock %}
+
+{% block content %}
+<main>
+  <div class="page-head">
+    <div>
+      <h1>Audit log</h1>
+      <p>Mọi thao tác đổi trạng thái đều có vết. Đây là căn cứ khi một bản ghi chuyên cần bị khiếu nại.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Lúc</th><th>Người/hệ thống</th><th>Hành động</th>
+        <th class="wrap">Đối tượng</th><th class="wrap">Chi tiết</th><th>IP</th>
+      </tr></thead>
+      <tbody id="rows"><tr><td colspan="6" class="empty">Đang tải…</td></tr></tbody>
+    </table>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}<script src="/static/admin_audit.js"></script>{% endblock %}
