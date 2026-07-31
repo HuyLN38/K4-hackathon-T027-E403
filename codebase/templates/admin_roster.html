@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Danh sách lớp{% endblock %}
+
+{% block content %}
+<main>
+  <div class="page-head">
+    <div>
+      <h1>Danh sách lớp</h1>
+      <p>Trạng thái khoá thiết bị, số buổi đã dự và mức rủi ro gần nhất của từng học viên.</p>
+    </div>
+    <div class="spacer"></div>
+    <div class="btn-row">
+      <input type="text" id="q" placeholder="Tìm theo mã hoặc tên" class="w-search">
+      <button id="add-open" class="primary">+ Thêm học viên</button>
+      <button id="import-open">Nhập CSV</button>
+    </div>
+  </div>
+
+  <div class="note mb-md">
+    Mọi thao tác đối chiếu dùng <strong>mã học viên</strong>, không dùng tên — lớp có
+    học viên trùng tên hoàn toàn (§5.5).
+  </div>
+
+  <div class="note mb-md">
+    <strong>Một thiết bị chỉ điểm danh cho một mã học viên.</strong>
+    Học viên mất máy / đổi máy → bấm <em>Unbind</em>, lần check-in tới
+    bind vào máy mới. Đang trong buổi mà không kịp xử lý → dùng
+    <a href="/admin/sessions">điểm danh tay</a> ở màn hình buổi học.
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th class="nowrap">Mã HV</th><th class="wrap w-md">Tên</th><th>Thiết bị</th><th>Bind lúc</th>
+        <th class="num">Buổi tham dự</th><th class="num">Ghi nhận thủ công</th>
+        <th class="num">Flag chưa xử lý</th>
+        <th>Mức rủi ro</th><th>Thao tác</th>
+      </tr></thead>
+      <tbody id="rows"><tr><td colspan="9" class="empty">Đang tải…</td></tr></tbody>
+    </table>
+  </div>
+
+  <dialog class="modal compact" id="student-modal">
+    <div class="modal-head">
+      <h2 id="student-modal-title">Thêm học viên</h2>
+      <span class="spacer"></span>
+      <button id="student-close">Đóng</button>
+    </div>
+    <div class="modal-body form-narrow">
+      <!-- Chế độ sửa: mã hiện như một nhãn tĩnh chứ không phải ô input bị khoá.
+           Ô input disabled trông như lỗi giao diện; nhãn nói rõ đây là dữ liệu
+           không sửa được và vì sao. -->
+      <div class="field hidden" id="f-sid-fixed">
+        <label>Mã học viên</label>
+        <div class="fixed-value">
+          <span class="mono" id="f-sid-label"></span>
+          <span class="hint">khoá mọi bản ghi chuyên cần — không đổi được</span>
+        </div>
+      </div>
+
+      <div class="field-row" id="f-new-row">
+        <div class="field">
+          <label for="f-sid">Mã học viên</label>
+          <input id="f-sid" type="text" placeholder="K4041"
+                 autocapitalize="characters" spellcheck="false" autocomplete="off">
+          <p class="hint">Chữ, số và <code>. _ -</code> · 2–32 ký tự. Mọi bản ghi chuyên cần
+            khoá theo mã này, nên sau khi tạo sẽ không đổi được.</p>
+        </div>
+        <div class="field">
+          <label for="f-name-new">Họ và tên</label>
+          <input id="f-name-new" type="text" placeholder="Nguyễn Văn An">
+        </div>
+      </div>
+
+      <div class="field hidden" id="f-name-row">
+        <label for="f-name">Họ và tên</label>
+        <input id="f-name" type="text" placeholder="Nguyễn Văn An">
+      </div>
+
+      <div class="field">
+        <label for="f-email">Email <span class="hint">— không bắt buộc</span></label>
+        <input id="f-email" type="text" placeholder="k4041@example.invalid" autocomplete="off">
+      </div>
+
+      <fieldset class="choice" id="f-pin-row">
+        <legend>PIN đăng nhập trang “Dữ liệu của tôi”</legend>
+        <label class="choice-item">
+          <input type="radio" name="pinmode" value="auto" checked>
+          <span><b>Hệ thống tự sinh 6 số</b><br>
+            <span class="hint">Cách nhanh nhất cho cả lớp.</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="radio" name="pinmode" value="manual">
+          <span><b>Tự đặt</b><br>
+            <input id="f-pin" type="text" inputmode="numeric" placeholder="4–12 chữ số" disabled></span>
+        </label>
+        <p class="hint">PIN hiện <strong>một lần</strong> ngay sau khi lưu. Hệ thống chỉ giữ bản băm,
+          không xem lại được.</p>
+      </fieldset>
+
+      <div id="student-msg" class="alert error hidden mb-sm"></div>
+
+      <div class="btn-row">
+        <button id="student-save" class="primary">Thêm học viên</button>
+        <button id="student-cancel">Huỷ</button>
+      </div>
+
+      <div id="f-active-row" class="danger-zone hidden">
+        <h3>Thao tác khác</h3>
+        <div class="btn-row">
+          <button id="f-reset-pin">Cấp PIN mới</button>
+          <button id="f-toggle-active"></button>
+        </div>
+        <p class="hint">Không có nút xoá học viên: xoá là xoá luôn bằng chứng chuyên cần của họ.
+          Ngưng theo dõi thì học viên không điểm danh được nữa, nhưng lịch sử vẫn còn nguyên
+          và vẫn khiếu nại được.</p>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal compact" id="import-modal">
+    <div class="modal-head">
+      <h2>Nhập danh sách lớp từ CSV</h2>
+      <span class="spacer"></span>
+      <button id="import-close">Đóng</button>
+    </div>
+    <div class="modal-body">
+      <div class="note mb-sm">
+        Mỗi dòng: <code>mã,tên,email</code> — cột email không bắt buộc. Dòng tiêu đề và dòng
+        bắt đầu bằng <code>#</code> được bỏ qua.
+        <strong>Kiểm toàn bộ trước khi ghi:</strong> còn một dòng lỗi là không ghi dòng nào,
+        để không rơi vào trạng thái nhập nửa chừng.
+      </div>
+      <div class="field">
+        <label for="csv-text">Dán CSV vào đây</label>
+        <textarea id="csv-text" rows="10" spellcheck="false"
+                  placeholder="K4041,Nguyễn Văn An,k4041@example.invalid&#10;K4042,Trần Thị Bình"></textarea>
+      </div>
+      <div id="import-msg" class="alert error hidden mb-sm"></div>
+      <div id="import-result"></div>
+      <div class="btn-row">
+        <button id="import-run" class="primary">Kiểm tra và nhập</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="card hidden" id="detail">
+    <div class="card-head">
+      <h2 id="detail-title"></h2>
+      <span class="spacer"></span>
+      <button id="detail-close">Ẩn</button>
+    </div>
+    <div id="detail-body"></div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}<script src="/static/admin_roster.js"></script>{% endblock %}

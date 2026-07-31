@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Dữ liệu của tôi{% endblock %}
+
+{% block content %}
+<main class="narrow" id="root">
+  <div class="page-head">
+    <div>
+      <h1>Dữ liệu của tôi</h1>
+      <p>Toàn bộ bản ghi chuyên cần của bạn, và lý do hệ thống xếp bạn ở mức hiện tại.</p>
+    </div>
+  </div>
+
+  {# Ẩn sẵn form PIN. Trang thử nhận ra thiết bị trước; hiện form ngay từ đầu thì
+     học viên trên đúng máy của mình sẽ thấy một ô đăng nhập nháy lên rồi biến mất,
+     và lần sau họ vẫn phản xạ đi tìm PIN. #}
+  <div class="card hidden" id="login-card">
+    <h2>Đăng nhập</h2>
+    <p class="hint">Máy này chưa buộc với mã học viên nào, nên cần mã và PIN.</p>
+    <div class="field">
+      <label for="sid">Mã học viên</label>
+      <input id="sid" type="text" autocapitalize="characters" spellcheck="false" placeholder="K4001">
+    </div>
+    <div class="field">
+      <label for="pin">PIN</label>
+      <input id="pin" type="password" inputmode="numeric" autocomplete="current-password">
+    </div>
+    <button id="go" class="primary big">Xem dữ liệu của tôi</button>
+    <div id="msg" class="alert error hidden mt-md"></div>
+  </div>
+
+  <div id="checking" class="empty">Đang nhận diện thiết bị…</div>
+  <div id="data-area" class="hidden"></div>
+</main>
+{% endblock %}
+
+{% block scripts %}<script src="/static/me.js"></script>{% endblock %}

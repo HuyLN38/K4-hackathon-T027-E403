@@ -1,0 +1,7 @@
+# Chỉ cần cho việc chạy test. Server không cần các package này.
+#   pip install -r requirements.txt -r requirements-dev.txt
+#   python -m pytest tests/ -q
+#
+# fastapi[standard] đã kéo theo httpx, thứ mà TestClient dùng, nên ở đây chỉ còn pytest.
+-r requirements.txt
+pytest>=8.0

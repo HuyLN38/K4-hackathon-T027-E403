@@ -1,0 +1,5 @@
+# Chạy: pip install -r requirements.txt
+#
+# Mã QR do qr.py tự sinh (thư viện chuẩn), nên không có phụ thuộc QR nào ở đây:
+# máy chạy demo trong lab có thể không có mạng để cài thêm package.
+fastapi[standard]>=0.115

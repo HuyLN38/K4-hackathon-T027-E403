@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<main>
+  <div class="page-head">
+    <div>
+      <h1>Dashboard</h1>
+      <p class="lead" id="lead">Đang tải bản tin đầu ngày…</p>
+    </div>
+    <div class="spacer"></div>
+    <div class="date-nav">
+      <button id="day-prev" class="daynav-arrow" aria-label="Ngày trước">‹</button>
+      <button id="day-label" class="daynav-label" aria-haspopup="dialog" aria-expanded="false">
+        <span id="day-weekday"></span>
+        <span id="day-full"></span>
+      </button>
+      <button id="day-next" class="daynav-arrow" aria-label="Ngày sau">›</button>
+      <button id="day-today" class="daynav-today hidden">Hôm nay</button>
+
+      <div class="cal hidden" id="cal" role="dialog" aria-label="Chọn ngày">
+        <div class="cal-head">
+          <button id="cal-prev" aria-label="Tháng trước">‹</button>
+          <span id="cal-month"></span>
+          <button id="cal-next" aria-label="Tháng sau">›</button>
+        </div>
+        <div class="cal-dow" id="cal-dow"></div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <p class="cal-legend"><i class="dot-session"></i> có buổi học · ngày mờ là không có lớp</p>
+      </div>
+    </div>
+    <button id="rebuild" class="primary">Tính lại</button>
+  </div>
+
+  <div class="card mb-md">
+    <div class="dist" id="dist"></div>
+    <div class="dist-legend" id="dist-legend"></div>
+  </div>
+
+  {% if not llm_enabled %}
+  <div class="note mb-md">
+    <strong>Tầng mô hình ngôn ngữ đang tắt.</strong>
+    Mức rủi ro và phần “vì sao” là deterministic, chạy độc lập với mô hình — nên bản tin
+    vẫn đủ để quyết định liên hệ ai. Thiếu duy nhất đoạn tin nhắn soạn sẵn; dùng phần
+    “vì sao” của từng ca làm căn cứ để tự viết.
+  </div>
+  {% endif %}
+
+  <div class="card-head">
+    <h2>Ca cần liên hệ</h2>
+    <span class="spacer"></span>
+    <span class="hint" id="strip-legend"></span>
+  </div>
+
+  <div id="cases"><div class="empty">Đang tải…</div></div>
+</main>
+{% endblock %}
+
+{% block scripts %}<script src="/static/admin_dashboard.js"></script>{% endblock %}

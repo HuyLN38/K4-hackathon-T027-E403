@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Ghi nhận có mặt{% endblock %}
+{% block chrome %}{% endblock %}
+
+{% block content %}
+<main class="checkin-shell">
+  <h1>Ghi nhận có mặt</h1>
+
+  {% if session_row %}
+  <p class="hint">
+    Buổi {{ session_row.date }} · {{ session_row.start_time }}
+    {%- if session_row.room %} · {{ session_row.room }}{% endif %}
+    · lượt điểm danh {{ token_row.call_index }}
+  </p>
+  {% endif %}
+
+  {% if problem %}
+    <div class="alert error mb-md">{{ problem }}</div>
+    <a class="btn" href="/">Về trang chủ</a>
+  {% else %}
+    {# Máy đã buộc thì không hỏi lại mã. Ẩn sẵn cả hai khối, JS bật đúng một cái
+       sau khi hỏi server máy này là của ai. #}
+    <div class="card hidden" id="detecting">
+      <div class="empty">Đang nhận diện thiết bị…</div>
+    </div>
+
+    <div class="card hidden" id="form-card">
+      <div class="field">
+        <label for="sid">Mã học viên</label>
+        <input id="sid" type="text" inputmode="text" autocomplete="off"
+               autocapitalize="characters" spellcheck="false" placeholder="K4001">
+      </div>
+      <button id="submit" class="primary big">Ghi nhận có mặt</button>
+      <div id="msg" class="alert error hidden mt-md"></div>
+      <p class="hint mt-md" id="first-time-note">
+        Lần đầu cần nhập mã. Từ buổi sau máy này tự nhận ra bạn.
+      </p>
+      <p class="hint mt-md">
+        Mã QR đổi liên tục. Nếu báo hết hạn, quét lại mã đang hiện trên máy chiếu.
+      </p>
+    </div>
+
+    <div class="card hidden" id="done-card">
+      <div class="confirm">
+        <div class="confirm-mark" id="done-mark">✓</div>
+        <div class="confirm-name" id="done-name"></div>
+        <div><span class="confirm-id" id="done-id"></span></div>
+        <div class="confirm-status" id="done-status"></div>
+      </div>
+
+      <div class="confirm-facts" id="done-facts"></div>
+
+      <div class="confirm-check">
+        <strong>Đúng tên bạn chưa?</strong>
+        Nếu đây không phải bạn thì mã học viên đã gõ sai — báo Labcoach ngay
+        để sửa, vì buổi này đang được ghi cho người có tên ở trên.
+      </div>
+
+      <div id="done-flags" class="mt-md"></div>
+      <div class="btn-row mt-md">
+        <a class="btn primary" href="/me">Xem dữ liệu của tôi</a>
+        <button id="again">Điểm danh mã khác</button>
+      </div>
+    </div>
+
+    <input type="hidden" id="token" value="{{ token }}">
+  {% endif %}
+</main>
+{% endblock %}
+
+{% block scripts %}
+{% if not problem %}<script src="/static/checkin.js"></script>{% endif %}
+{% endblock %}
