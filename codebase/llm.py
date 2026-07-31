@@ -287,6 +287,7 @@ def draft_message(rule_trace: dict[str, Any], student_name: str, cfg: dict[str, 
 
 
 # --------------------------------------------------------------------------
+<<<<<<< HEAD
 # 3. Diễn giải một flag bất thường
 # --------------------------------------------------------------------------
 # Điều mô hình KHÔNG được làm ở đây, viết thẳng vào prompt vì đây là chỗ dễ vượt
@@ -427,6 +428,9 @@ def explain_flag(ctx: dict[str, Any], cfg: dict[str, Any]) -> str | None:
 
 # --------------------------------------------------------------------------
 # 4. Câu hỏi tự nhiên -> SQL read-only (§4.2)
+=======
+# 3. Câu hỏi tự nhiên -> SQL read-only (§4.2)
+>>>>>>> 536153b69acb330f3a1329c9e7d083a56b7099be
 # --------------------------------------------------------------------------
 # Lược đồ đưa cho mô hình. Cắt còn các bảng trả lời được câu hỏi chuyên cần, và
 # **không** có bảng nào chứa bí mật (admin_users, sessions_auth, qr_tokens): thứ
@@ -443,9 +447,12 @@ risk_snapshots(id INT PK, student_id TEXT, date TEXT, risk_level TEXT 'ok|watch|
 
 rule_code nhận các giá trị: DEVICE_REUSE, DEVICE_MISMATCH, IP_RATE_SPIKE,
 EARLY_DEPARTURE, TOKEN_GRACE_USED, FINGERPRINT_MATCH.
+<<<<<<< HEAD
 
 QUAN TRỌNG - `device_hash` CHỈ có ở bảng `students`, KHÔNG có ở `sessions`.
 "Chưa bind thiết bị" = `students.device_hash IS NULL`. Đừng join sang sessions.
+=======
+>>>>>>> 536153b69acb330f3a1329c9e7d083a56b7099be
 """
 
 # Hai ví dụ mẫu, không phải lời dặn suông.
@@ -477,6 +484,7 @@ WHERE resolved = 0
 GROUP BY rule_code
 ORDER BY so_luong DESC
 LIMIT 200
+<<<<<<< HEAD
 
 VÍ DỤ 3 - "những học viên nào chưa bind thiết bị":
 SELECT student_id, name
@@ -484,6 +492,8 @@ FROM students
 WHERE active = 1 AND device_hash IS NULL
 ORDER BY student_id
 LIMIT 200
+=======
+>>>>>>> 536153b69acb330f3a1329c9e7d083a56b7099be
 """
 
 
@@ -520,7 +530,11 @@ def ask_sql(question: str, cfg: dict[str, Any]) -> str | None:
 
 
 # --------------------------------------------------------------------------
+<<<<<<< HEAD
 # 5. Bóc tách đơn xin phép viết tự do -> JSON có cấu trúc (§4.2)
+=======
+# 4. Bóc tách đơn xin phép viết tự do -> JSON có cấu trúc (§4.2)
+>>>>>>> 536153b69acb330f3a1329c9e7d083a56b7099be
 # --------------------------------------------------------------------------
 LEAVE_CATEGORIES = ["ốm", "việc gia đình", "lịch trùng", "đi lại", "khác"]
 
@@ -575,11 +589,15 @@ def _date_table(today: str) -> str:
 
 
 def parse_leave_request(
+<<<<<<< HEAD
     text: str,
     cfg: dict[str, Any],
     *,
     today: str,
     roster: list[dict[str, Any]] | None = None,
+=======
+    text: str, cfg: dict[str, Any], *, today: str, known_student_ids: list[str] | None = None
+>>>>>>> 536153b69acb330f3a1329c9e7d083a56b7099be
 ) -> dict[str, Any] | None:
     """Bóc một đơn xin phép viết tự do thành JSON có cấu trúc.
 
@@ -589,6 +607,7 @@ def parse_leave_request(
 
     Trả None khi tắt / Ollama im lặng / model trả về không phải JSON.
     """
+<<<<<<< HEAD
     # Đưa cả mã lẫn tên: học viên nhắn "em Nguyễn Văn An xin nghỉ" nhiều hơn là
     # nhớ đúng mã của mình. Việc đối chiếu tên -> mã vẫn do CODE làm ở app.py, ở
     # đây chỉ giúp mô hình chép đúng tên có thật thay vì tên nó nghe nhầm.
@@ -599,6 +618,14 @@ def parse_leave_request(
 
     prompt = (
         f"Hôm nay là {today} ({_weekday_vi(today)}).\n{_date_table(today)}{roster_block}"
+=======
+    roster = ""
+    if known_student_ids:
+        roster = "Mã học viên hợp lệ: " + ", ".join(known_student_ids[:200]) + "\n"
+
+    prompt = (
+        f"Hôm nay là {today} ({_weekday_vi(today)}).\n{_date_table(today)}{roster}"
+>>>>>>> 536153b69acb330f3a1329c9e7d083a56b7099be
         f"ĐƠN XIN PHÉP (học viên viết tự do):\n\"\"\"\n{text.strip()}\n\"\"\"\n\n"
         "Bóc thành JSON đúng các khoá sau:\n"
         '{"student_id": string|null, "student_name": string|null, '
@@ -612,9 +639,12 @@ def parse_leave_request(
         "không tự cộng trừ. Không đưa ngày nào đơn không nhắc tới.\n"
         "- \"student_id\" chỉ điền khi đơn viết rõ mã. Đơn không ghi mã thì để null, "
         "tuyệt đối không chọn bừa một mã trong danh sách lớp.\n"
+<<<<<<< HEAD
         "- \"student_name\" chép tên người xin nghỉ đúng như đơn viết. Nếu tên đó "
         "có trong DANH SÁCH LỚP thì chép y hệt cách viết trong danh sách. Không có "
         "tên trong đơn thì để null.\n"
+=======
+>>>>>>> 536153b69acb330f3a1329c9e7d083a56b7099be
         "- Trường nào đơn không nói thì để null và ghi tên nó vào \"missing\". "
         "Không đoán, không điền thay.\n"
         "- reason_text chép lại nguyên văn lý do trong đơn, không diễn giải.\n"
