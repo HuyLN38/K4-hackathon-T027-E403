@@ -8,13 +8,17 @@ const sid = $('#sid');
 const btn = $('#submit');
 const msg = $('#msg');
 
-sid.focus();
 sid.addEventListener('keydown', (e) => { if (e.key === 'Enter') btn.click(); });
 
-btn.addEventListener('click', async () => {
-  const studentId = sid.value.trim().toUpperCase();
-  if (!studentId) { setAlert(msg, 'Nhập mã học viên của bạn.'); sid.focus(); return; }
+/** Hiện form nhập mã. Dùng cho máy chưa buộc, và cho nút "không phải tôi". */
+function showForm(note) {
+  $('#detecting').classList.add('hidden');
+  $('#form-card').classList.remove('hidden');
+  if (note) $('#first-time-note').textContent = note;
+  sid.focus();
+}
 
+async function submitCheckin(studentId) {
   btn.disabled = true;
   btn.textContent = 'Đang ghi nhận…';
   setAlert(msg, '');
@@ -25,6 +29,7 @@ btn.addEventListener('click', async () => {
       body: { token: $('#token').value, student_id: studentId, fingerprint: fingerprint() },
     });
 
+    $('#detecting').classList.add('hidden');
     $('#form-card').classList.add('hidden');
     const done = $('#done-card');
     done.classList.remove('hidden');
@@ -57,7 +62,7 @@ btn.addEventListener('click', async () => {
 
     const notes = [];
     if (res.device_locked_now) {
-      notes.push('Thiết bị này vừa được buộc với mã học viên của bạn. Các buổi sau hãy dùng đúng thiết bị này — mỗi thiết bị chỉ điểm danh cho một người.');
+      notes.push('Thiết bị này vừa được buộc với mã học viên của bạn. Từ buổi sau chỉ cần quét mã là xong — không phải nhập lại mã học viên.');
     }
     (res.flags || []).forEach((f) => notes.push(`Đã ghi nhận dấu hiệu cần xem lại: ${f.label}.`));
     $('#done-flags').innerHTML = notes.length
@@ -66,16 +71,52 @@ btn.addEventListener('click', async () => {
 
     $('#again').addEventListener('click', () => {
       done.classList.add('hidden');
-      $('#form-card').classList.remove('hidden');
       sid.value = '';
       btn.disabled = false;
       btn.textContent = 'Ghi nhận có mặt';
       setAlert(msg, '');
-      sid.focus();
+      showForm('Nhập mã của người cần điểm danh.');
     });
   } catch (err) {
+    // Hỏng ở đây thì phải quay về form: có thể máy đã buộc cho người khác, hoặc
+    // học viên này đã điểm danh rồi. Cả hai đều cần người đọc thông báo và tự
+    // quyết, không phải một màn hình trắng.
+    showForm();
     setAlert(msg, err.message);
     btn.disabled = false;
     btn.textContent = 'Ghi nhận có mặt';
   }
+}
+
+btn.addEventListener('click', () => {
+  const studentId = sid.value.trim().toUpperCase();
+  if (!studentId) { setAlert(msg, 'Nhập mã học viên của bạn.'); sid.focus(); return; }
+  submitCheckin(studentId);
 });
+
+/* Lần đầu hỏi mã, từ lần sau tự nhận.
+ *
+ * Gõ mã mỗi buổi là nguồn sai thật: nhầm một ký tự thì buổi đó ghi cho người
+ * khác, rồi ràng buộc "một thiết bị một học viên" chặn luôn lượt đúng của cả hai
+ * người. Máy đã buộc rồi thì server biết chắc chắn hơn học viên gõ tay.
+ *
+ * Tự ghi luôn chứ không chỉ điền sẵn: quét mã QR đang chiếu trên tường ĐÃ là
+ * hành động xác nhận có mặt. Bắt bấm thêm một nút nữa không thêm thông tin gì. */
+(async () => {
+  $('#detecting').classList.remove('hidden');
+  try {
+    const who = await api('/api/checkin/whoami', {
+      method: 'POST',
+      body: { fingerprint: fingerprint() },
+    });
+    if (who.bound) {
+      $('#detecting').querySelector('.empty').textContent =
+        `Nhận ra ${who.name} (${who.student_id}) — đang ghi nhận…`;
+      await submitCheckin(who.student_id);
+      return;
+    }
+  } catch {
+    /* không nhận được thì hỏi mã như cũ */
+  }
+  showForm();
+})();
