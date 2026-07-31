@@ -78,7 +78,7 @@ Loại: [ ] Tối ưu tính năng có sẵn  [X] Tính năng mới
 
 - **Mức prototype nhắm tới:** [X] Working  
   - *Phần Mock:* Dữ liệu lịch sử 40 sinh viên × 20 buổi học.  
-  - *Phần Thật:* Trang check-in xác thực TOTP/Device Binding thật, FastAPI backend thật, Rule Engine deterministic thật, Ollama Qwen2.5 7B sinh chẩn đoán & tin nhắn thật, Dashboard giảng viên thật.
+  - *Phần Thật:* Trang check-in xác thực TOTP/Device Binding thật, FastAPI backend thật, Rule Engine deterministic thật, Ollama Qwen2.5 7B sinh chẩn đoán & tin nhắn thật, Dashboard của giảng viên thật.
 
 - **Automation:** [X] Conditional — lý do theo cost-of-error:  
   Record chuyên cần liên quan trực tiếp đến quyền lợi/điều kiện môn học và có thể bị khiếu nại. Ngoài ra tin nhắn gửi đến học viên nếu sai ngữ cảnh sẽ tổn hại quan hệ (cost-of-error cao). Do đó: **Deterministic Rule Engine chịu trách nhiệm phân loại mức rủi ro (`ok`/`watch`/`at_risk`); AI chỉ soạn chẩn đoán & tin nhắn; Giảng viên là người bắt buộc duyệt thủ công trước khi bấm gửi (Human-in-the-loop).**
