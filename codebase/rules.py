@@ -25,10 +25,18 @@ RULE_SEVERITY = {
     "FINGERPRINT_MATCH": SEV_MED,
 }
 
+# Nhãn phải mô tả VIỆC ĐÃ XẢY RA, không phải cái kết cục đã bị ngăn.
+#
+# Bản trước đặt DEVICE_REUSE là "Một thiết bị ghi nhận cho nhiều học viên" - mà
+# với `require_device_binding = true` thì điều đó KHÔNG BAO GIỜ xảy ra: hệ thống
+# chặn trước khi ghi. Người đọc nhãn ấy suy luận đúng rằng nó bất khả thi, rồi
+# kết luận sai rằng flag này vô dụng. Thực tế cả 3 flag loại này trong database
+# đều là bản ghi của một lần MƯỢN MÁY BỊ CHẶN - đường gian lận dễ xảy ra nhất.
+# Nhãn sai làm hỏng cả một tính năng đúng.
 RULE_LABEL_VI = {
-    "DEVICE_REUSE": "Một thiết bị ghi nhận cho nhiều học viên",
+    "DEVICE_REUSE": "Quét bằng máy đã buộc cho học viên khác",
     "IP_RATE_SPIKE": "Nhiều lượt ghi nhận dồn dập từ cùng một địa chỉ IP",
-    "DEVICE_MISMATCH": "Thiết bị không khớp thiết bị đã đăng ký",
+    "DEVICE_MISMATCH": "Quét bằng máy khác máy đã buộc của chính mình",
     "EARLY_DEPARTURE": "Vắng mặt ở lượt điểm danh thứ hai",
     "TOKEN_GRACE_USED": "Mã QR dùng sau hạn xoay vòng, trong khoảng gia hạn",
     "FINGERPRINT_MATCH": "Hai học viên có dấu vết thiết bị trùng nhau trong cùng buổi",
@@ -39,9 +47,9 @@ RULE_LABEL_VI = {
 # cùng cắt ở đúng một chỗ thì cả cột không còn phân biệt được dòng nào với dòng
 # nào. Cột hiện nhãn ngắn, câu đầy đủ nằm ở tooltip và ở ô thống kê phía trên.
 RULE_LABEL_SHORT_VI = {
-    "DEVICE_REUSE": "Thiết bị dùng chung",
+    "DEVICE_REUSE": "Máy của người khác",
     "IP_RATE_SPIKE": "Dồn dập cùng IP",
-    "DEVICE_MISMATCH": "Sai thiết bị",
+    "DEVICE_MISMATCH": "Máy lạ",
     "EARLY_DEPARTURE": "Vắng lượt 2",
     "TOKEN_GRACE_USED": "Mã quá hạn",
     "FINGERPRINT_MATCH": "Trùng dấu vết máy",

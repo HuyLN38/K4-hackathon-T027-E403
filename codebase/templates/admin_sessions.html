@@ -13,14 +13,23 @@
   </div>
 
   <div class="card">
-    <div class="card-head"><h2>Tạo buổi mới</h2></div>
-    <div class="field-row">
-      <div><label for="d">Ngày</label><input id="d" type="date" value="{{ today }}"></div>
-      <div><label for="t">Giờ bắt đầu</label><input id="t" type="time" value="09:00"></div>
-      <div><label for="r">Phòng</label><input id="r" type="text" value="Lab A"></div>
-      <div><label for="l">Muộn sau (phút)</label><input id="l" type="number" value="10" min="0" max="240"></div>
+    <div class="card-head">
+      <h2>Tạo buổi mới</h2>
+      <span class="spacer"></span>
+      <span class="hint">Mở điểm danh sau, ở bảng bên dưới.</span>
     </div>
-    <div class="btn-row"><button id="create" class="primary">Tạo buổi</button></div>
+    {# Nút nằm cùng hàng với các ô, không đứng riêng một dòng bên dưới: đứng riêng
+       thì nó dính sát ô đầu tiên và trông như thuộc về trường "Ngày". #}
+    <div class="field-row form-inline">
+      <div class="fld-date"><label for="d">Ngày</label><input id="d" type="date" value="{{ today }}"></div>
+      <div class="fld-time"><label for="t">Giờ bắt đầu</label><input id="t" type="time" value="09:00"></div>
+      <div class="fld-room"><label for="r">Phòng</label><input id="r" type="text" value="Lab A"></div>
+      <div class="fld-late">
+        <label for="l">Muộn sau <span class="hint">phút</span></label>
+        <input id="l" type="number" value="10" min="0" max="240">
+      </div>
+      <div class="field-action"><button id="create" class="primary">Tạo buổi</button></div>
+    </div>
     <div id="msg" class="alert error hidden mt-md"></div>
   </div>
 

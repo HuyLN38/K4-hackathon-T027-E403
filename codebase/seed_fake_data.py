@@ -1,14 +1,23 @@
-"""Sinh dữ liệu giả: 40 học viên x 20 buổi, có cài sẵn pattern.
+"""Khởi tạo database.
 
-Dữ liệu **giả hoàn toàn**, không lấy từ `data/` và không phải người thật.
+**Mặc định chỉ tạo tài khoản Labcoach, không tạo học viên nào.** Lớp thật thì danh
+sách học viên nhập từ giao diện (thêm từng người, hoặc dán CSV `mã,tên,email`), và
+40 cái tên bịa lẫn vào danh sách thật là thứ rất khó gỡ ra sau - `student_id` khoá
+mọi bản ghi chuyên cần nên không xoá học viên được, chỉ ngưng theo dõi.
 
-Cách sinh: mô phỏng lại đúng luồng check-in thật theo thứ tự thời gian, rồi gọi
-`rules.evaluate_checkin` / `rules.detect_early_departures`. Flag bất thường vì thế do chính
-rule engine sinh ra, không phải chèn tay - nếu rule sai thì dữ liệu seed sai theo,
-và đó là điều muốn: seed đồng thời là một phép thử rule.
+`--demo-data` sinh thêm bộ dữ liệu giả: 40 học viên × 20 buổi, có cài sẵn pattern.
+Dữ liệu **giả hoàn toàn**, không lấy từ `data/` và không phải người thật. Cần bộ
+này khi demo, và khi chạy `eval/run_llm_eval.py` - bộ eval đó đo trên `attendance.db`
+thật chứ không tự dựng dữ liệu như `run_eval.py`.
+
+Cách sinh dữ liệu giả: mô phỏng lại đúng luồng check-in thật theo thứ tự thời gian,
+rồi gọi `rules.evaluate_checkin` / `rules.detect_early_departures`. Flag bất thường
+vì thế do chính rule engine sinh ra, không phải chèn tay - nếu rule sai thì dữ liệu
+seed sai theo, và đó là điều muốn: seed đồng thời là một phép thử rule.
 
 Chạy:
-    python seed_fake_data.py --reset
+    python seed_fake_data.py --reset                  # chỉ Labcoach
+    python seed_fake_data.py --reset --demo-data      # kèm 40 học viên giả
     python seed_fake_data.py --reset --admin-password 'mật-khẩu-của-bạn'
 """
 from __future__ import annotations
@@ -131,7 +140,44 @@ def wipe_db() -> None:
             extra.unlink()
 
 
-def seed(reset: bool, admin_password: str | None, assume_yes: bool = False) -> None:
+def write_credentials(admin_password: str, pins: dict[str, str]) -> Path:
+    """Ghi file mật khẩu **cạnh database**, không phải cạnh script.
+
+    Bản trước chốt đường dẫn theo `__file__`, nên một lần chạy thử với
+    `ATTENDANCE_DB` trỏ sang database tạm vẫn đè lên file mật khẩu của database
+    thật - và PIN học viên chỉ lưu bản băm nên không lấy lại được. File mật khẩu
+    phải đi theo database mà nó mô tả.
+    """
+    creds = DB_PATH.parent / f"{DB_PATH.stem}_credentials.txt"
+    if DB_PATH.name == "attendance.db":
+        creds = DB_PATH.parent / "seed_credentials.txt"   # giữ tên cũ cho db mặc định
+    lines = [
+        "# Tài khoản khởi tạo - KHÔNG commit file này (đã có trong .gitignore)",
+        f"labcoach / {admin_password}",
+    ]
+    if pins:
+        lines += ["", "# PIN học viên (trang /me)",
+                  *[f"{sid} / {pin}" for sid, pin in pins.items()]]
+    creds.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return creds
+
+
+def seed(
+    reset: bool,
+    admin_password: str | None,
+    assume_yes: bool = False,
+    demo_data: bool = False,
+) -> None:
+    """Khởi tạo database.
+
+    Mặc định chỉ tạo **tài khoản Labcoach** trên một database trống: lớp thật thì
+    danh sách học viên nhập từ giao diện (thêm từng người hoặc dán CSV), và 40 cái
+    tên bịa lẫn vào danh sách thật là thứ rất khó gỡ ra sau.
+
+    `demo_data=True` sinh lại bộ dữ liệu giả đầy đủ (40 học viên × 20 buổi có cài
+    sẵn pattern) - cần cho việc demo và cho `eval/run_llm_eval.py`, vì bộ eval đó
+    chạy trên `attendance.db` thật chứ không tự dựng dữ liệu như `run_eval.py`.
+    """
     existing = describe_existing()
     has_data = bool(existing and existing["students"])
 
@@ -180,6 +226,18 @@ def seed(reset: bool, admin_password: str | None, assume_yes: bool = False) -> N
                                                pw_salt = excluded.pw_salt""",
         ("labcoach", "Labcoach lớp K4", pw_hash, pw_salt, "owner", ts),
     )
+
+    # Đường mặc định dừng ở đây: database có Labcoach, chưa có học viên nào.
+    if not demo_data:
+        conn.commit()
+        conn.close()
+        creds = write_credentials(admin_password, {})
+        print("Đã tạo tài khoản Labcoach. Chưa có học viên nào - đó là chủ ý.")
+        print("\nThêm học viên ở  Danh sách lớp: từng người, hoặc dán CSV `mã,tên,email`.")
+        print("Muốn bộ dữ liệu giả để demo:  python seed_fake_data.py --reset --demo-data")
+        print(f"\nTài khoản Labcoach:  labcoach / {admin_password}")
+        print(f"Đã ghi: {creds}")
+        return
 
     # ---------------- học viên ----------------
     names = make_names(40)
@@ -406,15 +464,7 @@ def seed(reset: bool, admin_password: str | None, assume_yes: bool = False) -> N
     attendance_rows = conn.execute("SELECT COUNT(*) AS n FROM attendance").fetchone()["n"]
     conn.close()
 
-    creds = Path(__file__).resolve().parent / "seed_credentials.txt"
-    lines = [
-        "# Tài khoản dữ liệu giả - KHÔNG commit file này (đã có trong .gitignore)",
-        f"labcoach / {admin_password}",
-        "",
-        "# PIN học viên (trang /me)",
-        *[f"{sid} / {pin}" for sid, pin in pins.items()],
-    ]
-    creds.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    creds = write_credentials(admin_password, pins)
 
     print(f"Đã sinh {len(students)} học viên, {total_sessions} buổi đã đóng + 1 buổi hôm nay.")
     print(f"Bản ghi attendance: {attendance_rows}")
@@ -426,10 +476,16 @@ def seed(reset: bool, admin_password: str | None, assume_yes: bool = False) -> N
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Sinh dữ liệu giả cho hệ thống chuyên cần")
+    parser = argparse.ArgumentParser(
+        description="Khởi tạo database. Mặc định chỉ tạo tài khoản Labcoach."
+    )
     parser.add_argument("--reset", action="store_true", help="xoá database cũ trước khi sinh")
     parser.add_argument("--admin-password", default=None, help="mật khẩu Labcoach (mặc định: sinh ngẫu nhiên)")
     parser.add_argument("--yes", action="store_true",
                         help="bỏ qua bước xác nhận khi xoá (dùng cho script tự động)")
+    parser.add_argument("--demo-data", action="store_true",
+                        help="sinh thêm 40 học viên giả × 20 buổi có cài sẵn pattern "
+                             "(để demo và để chạy eval/run_llm_eval.py)")
     args = parser.parse_args()
-    seed(reset=args.reset, admin_password=args.admin_password, assume_yes=args.yes)
+    seed(reset=args.reset, admin_password=args.admin_password, assume_yes=args.yes,
+         demo_data=args.demo_data)

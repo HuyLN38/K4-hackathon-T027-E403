@@ -13,8 +13,16 @@ Sơ đồ luồng: [`../docs/flows.md`](../docs/flows.md) · Spec: [`../spec.md`
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-python seed_fake_data.py --reset          # 40 học viên giả × 20 buổi, in ra mật khẩu
+python seed_fake_data.py --reset          # chỉ tạo tài khoản Labcoach, in ra mật khẩu
 python run.py                             # bind 0.0.0.0:8000, in ra IP LAN
+```
+
+Mặc định database **không có học viên nào** — nhập lớp thật ở *Danh sách lớp*
+(từng người, hoặc dán CSV `mã,tên,email`). Muốn bộ dữ liệu giả để demo hoặc để
+chạy `eval/run_llm_eval.py`:
+
+```bash
+python seed_fake_data.py --reset --demo-data    # 40 học viên giả × 20 buổi
 ```
 
 ### Tầng mô hình (tuỳ chọn)
@@ -41,16 +49,17 @@ khỏi máy này.
 
 | Bề mặt | Đường dẫn | Ai dùng |
 |---|---|---|
-| Điểm danh | `/` → quét QR → `/checkin?t=…` | Học viên, trên điện thoại |
+| Điểm danh | `/` → quét QR → `/checkin?t=…` | Học viên — chỉ nhập mã ở buổi đầu, sau đó máy tự nhận |
 | Máy chiếu | `/projector` | Labcoach chiếu lên màn hình lớp |
 | Dashboard | `/admin` | Labcoach — bản tin đầu ngày |
-| Flag | `/admin/anomalies` | Labcoach — hàng đợi flag bất thường, đã gộp |
-| Trợ lý | `/admin/assistant` | Labcoach — hỏi dữ liệu bằng tiếng Việt, bóc đơn xin phép |
+| Flag | `/admin/anomalies` | Labcoach — hàng đợi flag; bấm một dòng để đọc đầy đủ và hỏi mô hình |
+| Trợ lý | `/admin/assistant` | Labcoach — hỏi dữ liệu, bóc đơn xin phép, và **bảng chỉ tiêu §7.2 của tầng mô hình** |
 | Dữ liệu của tôi | `/me` | Học viên tự xem hồ sơ — vào thẳng nếu đang dùng đúng máy đã buộc |
 
-`seed_fake_data.py` sinh mật khẩu Labcoach ngẫu nhiên và ghi toàn bộ PIN học viên
-ra `seed_credentials.txt` (đã nằm trong `.gitignore`). Muốn đặt mật khẩu cố định:
-`--admin-password 'chuỗi-của-bạn'`.
+`seed_fake_data.py` sinh mật khẩu Labcoach ngẫu nhiên và ghi ra file mật khẩu
+**đặt cạnh database** (`seed_credentials.txt`, đã nằm trong `.gitignore`). PIN học
+viên chỉ có trong file này và chỉ lưu bản băm trong database — mất file là phải cấp
+PIN mới. Muốn đặt mật khẩu cố định: `--admin-password 'chuỗi-của-bạn'`.
 
 ### Dữ liệu có bị mất khi khởi động lại không?
 
@@ -118,13 +127,13 @@ một lệnh gõ nhầm lúc 8h sáng không được phép là đường một 
 | `qr.py` | Bộ mã hoá QR thuần Python, byte mode, ECC mức M | [ĐIỀN] |
 | `rules.py` | 6 rule bất thường + 3 mức rủi ro + `rule_trace` | [ĐIỀN] |
 | `db.py` | Kết nối SQLite, đọc config, ghi audit | [ĐIỀN] |
-| `llm.py` | Tầng mô hình: chẩn đoán · tin nhắn nháp · sinh SQL · bóc đơn xin phép | [ĐIỀN] |
+| `llm.py` | Tầng mô hình: chẩn đoán · tin nhắn nháp · diễn giải flag · sinh SQL · bóc đơn xin phép | [ĐIỀN] |
 | `schema.sql` | 10 bảng | [ĐIỀN] |
 | `config.json` | Toàn bộ ngưỡng, sửa ở đây không sửa code | [ĐIỀN] |
-| `seed_fake_data.py` | Dữ liệu giả có cài pattern | [ĐIỀN] |
+| `seed_fake_data.py` | Khởi tạo Labcoach; `--demo-data` sinh thêm lớp giả có cài pattern | [ĐIỀN] |
 | `templates/`, `static/` | UI: 4 bề mặt, không framework, không CDN | [ĐIỀN] |
 | `devices.py` | Vòng đời buộc / nhả thiết bị (lớp 3) | [ĐIỀN] |
-| `tests/` | 194 test | [ĐIỀN] |
+| `tests/` | 220 test | [ĐIỀN] |
 
 > Luật vibe-coding: không giải thích được phần có tên mình thì phần đó 0 điểm.
 > Điền tên vào bảng trên trước CP5.
@@ -134,15 +143,23 @@ một lệnh gõ nhầm lúc 8h sáng không được phép là đường một 
 ## Kiểm thử
 
 ```bash
-python -m pytest tests/ -q            # 194 test, không gọi mô hình
+python -m pytest tests/ -q            # 220 test, không gọi mô hình
 python ../eval/run_eval.py            # golden set 20 ca × 3 lượt (deterministic)
 python ../eval/run_llm_eval.py        # chỉ tiêu §7.2 của tầng mô hình
 ```
 
+`run_llm_eval.py` ghi ra ba file trong `eval/`, không chỉ in ra terminal:
+
+| File | Dùng để |
+|---|---|
+| `llm_eval_latest.json` | Trang **Trợ lý** (`/admin/assistant`) đọc và hiện thành bảng 4 chỉ tiêu + nguyên văn model sinh ra ở từng ca |
+| `llm_results.csv` | Mỗi ca một dòng kèm câu chẩn đoán và tin nhắn đầy đủ — mở bằng Excel để chấm tay |
+| `llm_eval_history.jsonl` | **Ghi thêm** mỗi lượt chạy. Cần vì chỉ tiêu "không bịa" dao động giữa các lượt: một con số đơn lẻ không nói được chất lượng, phải nhìn cả dãy |
+
 Kết quả lần chạy gần nhất:
 
 ```
-194 passed
+220 passed
 Golden set: 20 ca — phân bố nhãn {'ok': 6, 'watch': 6, 'at_risk': 8}
 Lượt 1/2/3: nhãn rủi ro 100% · tín hiệu 100% · tổng 100%
 Không có ca nào lệch giữa 3 lượt.

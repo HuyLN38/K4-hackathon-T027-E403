@@ -168,6 +168,28 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .field-row { display: flex; gap: .75rem; flex-wrap: wrap; }
 .field-row > * { flex: 1 1 140px; }
 
+/* Form một hàng: các ô + nút hành động nằm cùng dòng.
+ *
+ * Nút đứng riêng một dòng bên dưới thì nó dính sát mép ô đầu tiên (khoảng cách
+ * thật đo được là 0px) và trông như thuộc về trường đó. Đưa vào cùng hàng, canh
+ * đáy theo ô nhập, thì quan hệ "điền xong rồi bấm" đọc được ngay. */
+.form-inline { align-items: flex-end; row-gap: 1rem; }
+.form-inline .field-action { flex: 0 0 auto; }
+/* Bề rộng theo nội dung thật: ô ngày cần chỗ cho lịch, ô số chỉ cần vài chữ số.
+   Để tất cả co giãn đều nhau thì ô "Muộn sau" rộng bằng ô "Phòng" - thừa chỗ mà
+   vẫn trông như đang thiếu. */
+.form-inline .fld-date { flex: 0 1 12rem; }
+.form-inline .fld-time { flex: 0 1 9rem; }
+.form-inline .fld-room { flex: 1 1 10rem; }
+.form-inline .fld-late { flex: 0 1 9rem; }
+.form-inline label .hint { font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+@media (max-width: 620px) {
+  /* Điện thoại: nút chiếm cả hàng cuối cho dễ bấm. */
+  .form-inline .field-action { flex: 1 1 100%; }
+  .form-inline .field-action button { width: 100%; }
+}
+
 button, .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
   padding: .5rem 1rem; border-radius: 6px; border: 1px solid var(--border);
@@ -247,6 +269,136 @@ table .btn-row button, table .btn-row .btn {
   padding: .2rem .5rem; font-size: .8rem; line-height: 1.35; min-height: 1.85rem;
 }
 table .badge { vertical-align: middle; }
+
+/* ---------------- trang Trợ lý ---------------- */
+/* Ranh giới quyền nằm ngay đầu trang, dạng ba ô ngang: đây là trang duy nhất
+   mô hình nói chuyện trực tiếp với người dùng, nên giới hạn của nó phải đọc
+   được trước khi gõ câu đầu tiên, không phải sau khi đã tin vào một con số. */
+.guard-strip {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .6rem;
+}
+.guard-item {
+  display: flex; gap: .6rem; align-items: flex-start;
+  background: var(--gold-soft); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .7rem .85rem; font-size: .88rem;
+}
+.guard-item .hint { display: block; margin-top: .15rem; }
+.guard-icon { color: var(--gold); font-size: 1.05rem; line-height: 1.2; }
+
+.tool-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); gap: 1rem; }
+.tool-head { margin-bottom: .9rem; }
+.tool-head h2 { margin: 0 0 .2rem; }
+.tool-head .hint { margin: 0; }
+.big-input { font-size: 1rem; padding: .6rem .75rem; }
+
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .55rem; }
+.chip {
+  font-size: .8rem; padding: .28rem .6rem; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  color: var(--text-dim); cursor: pointer; min-height: 0;
+}
+.chip:hover { border-color: var(--gold); color: var(--text); }
+
+/* Bảng chỉ tiêu §7.2. Con số to, ngưỡng nhỏ bên dưới: người đọc cần biết
+   "đạt hay không" trong một cái liếc, chi tiết mới đọc sau. */
+.eval-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .7rem;
+  margin-top: .9rem;
+}
+.eval-item {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .8rem .9rem;
+}
+.eval-label { font-size: .78rem; color: var(--text-dim); min-height: 2.2em; line-height: 1.3; }
+.eval-value {
+  font-family: var(--display); font-size: 1.9rem; font-weight: 500;
+  letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin: .15rem 0 .45rem;
+}
+.eval-unit { font-size: .95rem; margin-left: .1rem; color: var(--text-dim); }
+.eval-bar { height: 4px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.eval-bar i { display: block; height: 100%; width: 100%; }
+.eval-bar i.pass { background: var(--ok); }
+.eval-bar i.fail { background: var(--risk); }
+.eval-foot { display: flex; align-items: center; gap: .5rem; margin-top: .5rem; flex-wrap: wrap; }
+.eval-foot .spacer { flex: 1; }
+.eval-item.pass { border-color: rgb(31 107 74 / 35%); }
+.eval-item.fail { border-color: rgb(155 42 42 / 35%); }
+
+/* Nguyên văn model sinh ra ở từng ca. Ca hỏng viền đỏ để lướt là thấy, không
+   phải đọc hết 22 khối mới tìm ra chỗ sai. */
+.eval-case {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: .75rem .9rem; margin-top: .6rem; background: var(--surface-2);
+}
+.eval-case.bad { border-color: rgb(155 42 42 / 45%); background: var(--risk-soft); }
+.eval-case-head { display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; }
+.eval-case-body { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; margin-top: .6rem; }
+.eval-case-body .k {
+  display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--text-dim); margin-bottom: .25rem;
+}
+.eval-case-body .llm-text { background: var(--surface); font-size: .88rem; }
+.eval-problems { margin: .5rem 0 0; padding-left: 1.1rem; font-size: .85rem; color: var(--risk); }
+td.num.miss { color: var(--risk); font-weight: 650; }
+
+@media (max-width: 640px) {
+  .tool-grid { grid-template-columns: 1fr; }
+  .eval-case-body { grid-template-columns: 1fr; }
+}
+
+/* ---------------- dải chip lọc ---------------- */
+.filter-bar { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.fchip {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-size: .84rem; padding: .32rem .5rem .32rem .7rem; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text-dim); cursor: pointer; min-height: 0;
+}
+.fchip:hover { border-color: var(--gold); color: var(--text); }
+.fchip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.fchip-n {
+  font-variant-numeric: tabular-nums; font-weight: 650; font-size: .8rem;
+  background: var(--surface-2); border-radius: 999px; padding: .05rem .42rem; color: var(--text);
+}
+.fchip.on .fchip-n { background: rgb(255 255 255 / 22%); color: #fff; }
+
+/* "đã chặn" = lượt quét bị từ chối, KHÔNG có bản ghi chuyên cần nào.
+   Đây là khác biệt quan trọng nhất giữa hai loại flag và trước đây giao diện
+   không hiện ra ở đâu cả - người đọc tưởng chuyện xấu đã xảy ra rồi. */
+.badge.blocked {
+  background: var(--risk-soft); color: var(--risk); font-weight: 650; margin-right: .35rem;
+}
+
+/* ---------------- chi tiết một flag ---------------- */
+tbody tr.clickable { cursor: pointer; }
+tbody tr.clickable:hover { background: var(--gold-soft); }
+/* Chỗ duy nhất chữ được xuống dòng thoải mái: trong bảng nó phải cắt bằng "…". */
+.detail-full { white-space: pre-wrap; line-height: 1.55; }
+.rel-list { margin: .4rem 0 0; padding-left: 1.1rem; }
+.rel-list li { margin-bottom: .3rem; line-height: 1.5; }
+.rel-list .hint { margin-left: .3rem; }
+
+/* Nút đang chờ: vòng quay + số giây, giữ nguyên bề rộng nút để layout không giật. */
+button.is-busy {
+  display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
+  cursor: progress; opacity: 1;
+}
+.spin {
+  width: .85em; height: .85em; border-radius: 50%; display: inline-block;
+  border: 2px solid currentColor; border-right-color: transparent;
+  animation: spin .7s linear infinite;
+}
+.busy-s { font-variant-numeric: tabular-nums; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2.4s; } }
+
+/* Câu SQL thu gọn mặc định: thứ cần đọc là bảng kết quả, SQL là thứ để kiểm lại. */
+.sql-details > summary {
+  cursor: pointer; font-size: .86rem; color: var(--text-dim);
+  padding: .3rem 0; user-select: none;
+}
+.sql-details > summary:hover { color: var(--text); }
+.sql-details[open] > summary { margin-bottom: .2rem; }
 
 /* ---------------- đầu ra của mô hình ---------------- */
 /* Chữ do mô hình sinh phải trông khác chữ do hệ thống tính: người đọc cần biết

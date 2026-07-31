@@ -15,6 +15,8 @@ import llm
 import pytest
 from conftest import CODEBASE, create_session, open_session  # noqa: F401
 
+TODAY = "2026-07-30"
+
 
 # ==========================================================================
 # Ranh giới ở tầng chữ ký hàm - §4.2 nói ranh giới này giữ ở code, không phải
@@ -257,3 +259,212 @@ def test_date_table_is_short_and_correct():
     assert "mai = 2026-08-01" in table
     assert "thứ 3 = thứ Ba kế tiếp = 2026-08-04" in table
     assert "thứ 5 = thứ Năm kế tiếp = 2026-08-06" in table
+
+
+# ==========================================================================
+# Chi tiết một flag + diễn giải bằng mô hình
+# ==========================================================================
+# Chuỗi dài đúng kiểu bị cắt bằng "…" trong bảng - lý do tồn tại của endpoint này.
+LONG_DETAIL = (
+    "Chặn check-in: thiết bị đã buộc cho K4002, học viên này dùng máy của bạn cùng "
+    "lớp để điểm danh nên hệ thống từ chối ghi và giữ lại dấu vết cho Labcoach xem lại"
+)
+
+
+@pytest.fixture()
+def flag_id(seeded, conn):
+    """Một flag thật, gắn vào một buổi thật, với detail đủ dài để bị cắt."""
+    import rules
+    session_id = create_session(conn, TODAY)
+    rules.raise_flag(conn, None, session_id, "K4001", "DEVICE_REUSE", LONG_DETAIL)
+    conn.commit()
+    row = conn.execute(
+        "SELECT id FROM anomaly_flags WHERE rule_code = 'DEVICE_REUSE' ORDER BY id DESC LIMIT 1"
+    ).fetchone()
+    return row["id"]
+
+
+def test_literal_anomaly_routes_win_over_the_id_route(seeded, admin_client, conn):
+    """`/anomalies/grouped` phải vẫn là endpoint gộp, không bị đọc thành flag_id.
+
+    FastAPI khớp route theo thứ tự khai báo. Ai đó chuyển `{flag_id}` lên trên là
+    `grouped` và `resolve-group` chết ngay, mà triệu chứng chỉ là 422 khó hiểu.
+    """
+    assert admin_client.get("/api/admin/anomalies/grouped").status_code == 200
+    res = admin_client.post("/api/admin/anomalies/resolve-group",
+                            json={"rule_code": "EARLY_DEPARTURE", "student_id": "K4001", "note": ""})
+    assert res.status_code in (200, 404)   # 404 = không còn flag nào trong nhóm, vẫn là route đúng
+
+
+def test_flag_detail_returns_the_full_untruncated_text(flag_id, admin_client, conn):
+    """Lý do tồn tại của endpoint này: cột trong bảng bị cắt bằng "…"."""
+    res = admin_client.get(f"/api/admin/anomalies/{flag_id}")
+    assert res.status_code == 200, res.text
+    body = res.json()
+    stored = conn.execute("SELECT detail FROM anomaly_flags WHERE id = ?", (flag_id,)).fetchone()
+    assert body["flag"]["detail"] == stored["detail"] == LONG_DETAIL
+    assert "…" not in body["flag"]["detail"]
+    assert body["flag"]["label"]          # nhãn tiếng Việt đầy đủ
+    assert "student_other_flags" in body
+    assert "others_same_session" in body
+
+
+def test_flag_detail_works_with_the_model_off(flag_id, admin_client, conn):
+    """Phần dữ kiện là deterministic - Ollama chết thì vẫn đọc được flag."""
+    body = admin_client.get(f"/api/admin/anomalies/{flag_id}").json()
+    assert body["llm_enabled"] is False
+    assert body["flag"]["rule_code"]
+
+
+def test_unknown_flag_id_is_404(seeded, admin_client):
+    assert admin_client.get("/api/admin/anomalies/999999").status_code == 404
+
+
+def test_flag_explain_is_503_when_model_is_off(flag_id, admin_client):
+    res = admin_client.post(f"/api/admin/anomalies/{flag_id}/explain")
+    assert res.status_code == 503
+
+
+def test_explain_flag_prompt_forbids_concluding_fraud(monkeypatch):
+    """Ranh giới quan trọng nhất của tính năng này.
+
+    Một câu "học viên này gian lận" đọc rất thuyết phục, mà bằng chứng thì chỉ đủ
+    để nói "hai người dùng chung một máy". Lệnh cấm phải nằm trong prompt, và test
+    này giữ nó ở đó.
+    """
+    captured = {}
+    monkeypatch.setattr(llm, "_generate",
+                        lambda prompt, cfg, **k: captured.setdefault("p", prompt) and "x")
+    ctx = {"flag": {"label": "Một thiết bị ghi nhận cho nhiều học viên",
+                    "rule_code": "DEVICE_REUSE", "severity": "high",
+                    "student_id": "K4001", "student_name": "A", "date": "2026-07-30",
+                    "start_time": "09:00", "detail": "Chặn check-in", "resolved": 0}}
+    llm.explain_flag(ctx, {"llm": {"enabled": True}})
+    prompt = captured["p"]
+    assert "KHÔNG kết luận có gian lận" in prompt
+    assert "KHÔNG đề xuất kỷ luật" in prompt
+    assert "nên đóng hay không" in prompt
+
+
+def test_flag_facts_says_plainly_when_the_checkin_was_blocked(monkeypatch):
+    """Không có bản ghi attendance nghĩa là lượt check-in bị CHẶN, không phải
+    "có mặt bình thường". Nhầm chỗ này là mô hình kể sai hẳn câu chuyện."""
+    ctx = {"flag": {"label": "x", "rule_code": "DEVICE_REUSE", "severity": "high",
+                    "student_id": "K4001", "student_name": "A", "date": "2026-07-30",
+                    "start_time": "09:00", "detail": "d", "resolved": 0},
+           "attendance": None}
+    facts = llm._flag_facts(ctx)
+    assert "bị CHẶN" in facts
+    assert "chưa được tính có mặt" in facts
+
+
+# ==========================================================================
+# Bóc đơn xin phép: tra mã học viên theo TÊN
+#
+# Đưa cả danh sách tên vào prompt thì mô hình tự tra tên -> mã, và với tên trùng
+# hai người nó chọn bừa một người. Ghi chuyên cần cho nhầm anh em sinh đôi là
+# đúng thứ hệ thống này sinh ra để tránh (§5.5), nên phép đối chiếu phải chạy
+# bằng code KỂ CẢ khi mô hình đã đưa ra một mã.
+# ==========================================================================
+@pytest.fixture()
+def twins(seeded, conn):
+    """Hai học viên trùng tên hoàn toàn - đúng tình huống §5.5 mô tả."""
+    from db import now_ms
+    ts = now_ms()
+    for sid in ("K4101", "K4102"):
+        conn.execute(
+            """INSERT INTO students (student_id, name, active, created_at)
+               VALUES (?,?,1,?)""", (sid, "Trần Văn Sinh Đôi", ts))
+    conn.commit()
+    return ("K4101", "K4102")
+
+
+def fake_model(monkeypatch, payload: str):
+    """Giả lập một lượt trả lời của mô hình, không gọi Ollama.
+
+    Phải bật cả `is_enabled`: toàn bộ test suite chạy với tầng mô hình TẮT (§7.4),
+    nên endpoint sẽ trả 503 trước khi tới được phần đang muốn kiểm.
+    """
+    monkeypatch.setattr(llm, "is_enabled", lambda cfg: True)
+    monkeypatch.setattr(llm, "_generate", lambda *a, **k: payload)
+
+
+def test_name_alone_resolves_to_the_single_matching_student(
+    seeded, admin_client, conn, monkeypatch
+):
+    fake_model(monkeypatch, '{"student_id":null,"student_name":"Nguyễn Văn A",'
+                            '"dates":["2026-08-01"],"category":"ốm","reason_text":"sốt"}')
+    conn.execute("UPDATE students SET name = 'Nguyễn Văn A' WHERE student_id = 'K4001'")
+    conn.commit()
+    body = admin_client.post("/api/admin/parse-leave",
+                             json={"text": "Em Nguyễn Văn A xin nghỉ mai ạ"}).json()["parsed"]
+    assert body["student_id"] == "K4001"
+    assert body["student_known"] is True
+    assert "suy ra từ tên" in body["lookup_note"]
+
+
+def test_duplicate_name_without_an_id_refuses_to_guess(twins, admin_client, monkeypatch):
+    """Mô hình đoán K4101; code phải gạt đi vì đơn không ghi mã."""
+    fake_model(monkeypatch, '{"student_id":"K4101","student_name":"Trần Văn Sinh Đôi",'
+                            '"dates":["2026-08-01"],"category":"ốm","reason_text":"sốt"}')
+    body = admin_client.post(
+        "/api/admin/parse-leave",
+        json={"text": "Em Trần Văn Sinh Đôi xin nghỉ mai ạ"}).json()["parsed"]
+    assert body["student_id"] is None, "không được chọn hộ khi hai người trùng tên"
+    assert body["student_known"] is False
+    assert sorted(m["student_id"] for m in body["name_matches"]) == list(twins)
+    assert "phải bạn chọn" in body["lookup_note"]
+
+
+def test_duplicate_name_with_an_id_in_the_text_trusts_the_id(twins, admin_client, monkeypatch):
+    """Đơn tự ghi mã thì tin mã, kể cả khi tên trùng nhiều người."""
+    fake_model(monkeypatch, '{"student_id":"K4102","student_name":"Trần Văn Sinh Đôi",'
+                            '"dates":["2026-08-01"],"category":"ốm","reason_text":"sốt"}')
+    body = admin_client.post(
+        "/api/admin/parse-leave",
+        json={"text": "Em K4102 Trần Văn Sinh Đôi xin nghỉ mai ạ"}).json()["parsed"]
+    assert body["student_id"] == "K4102"
+    assert body["student_known"] is True
+
+
+def test_name_not_in_the_roster_is_reported(seeded, admin_client, monkeypatch):
+    fake_model(monkeypatch, '{"student_id":null,"student_name":"Người Lạ Hoắc",'
+                            '"dates":["2026-08-01"],"category":"ốm","reason_text":"x"}')
+    body = admin_client.post("/api/admin/parse-leave",
+                             json={"text": "Em Người Lạ Hoắc xin nghỉ"}).json()["parsed"]
+    assert body["student_known"] is False
+    assert "Không tìm thấy" in body["lookup_note"]
+
+
+def test_id_not_in_the_roster_is_reported_and_cleared(seeded, admin_client, monkeypatch):
+    """Mã không có trong lớp phải bị gạt, không được để lại như thể hợp lệ."""
+    fake_model(monkeypatch, '{"student_id":"K9999","student_name":null,'
+                            '"dates":["2026-08-01"],"category":"ốm","reason_text":"x"}')
+    body = admin_client.post("/api/admin/parse-leave",
+                             json={"text": "Em K9999 xin nghỉ mai"}).json()["parsed"]
+    assert body["student_id"] is None
+    assert body["student_known"] is False
+    assert "KHÔNG có trong danh sách lớp" in body["lookup_note"]
+
+
+# ==========================================================================
+# SQL do mô hình sinh: `;` rồi mới tới LIMIT
+# ==========================================================================
+def test_semicolon_before_a_trailing_limit_is_tolerated(check):
+    """Lỗi thật: model sinh `SELECT …;\\nLIMIT 200` làm hỏng 100% một câu hỏi.
+
+    Phần sau `;` không bao giờ được chạy; ở đây chỉ quyết định bỏ qua hay báo lỗi.
+    Mệnh đề LIMIT thừa thì vô hại - `fetchmany` đã chặn số dòng ở tầng dưới.
+    """
+    assert check("SELECT name FROM students;\nLIMIT 200") == "SELECT name FROM students"
+
+
+def test_real_second_statement_after_a_semicolon_is_still_rejected(check):
+    from fastapi import HTTPException
+    with pytest.raises(HTTPException):
+        check("SELECT 1;\nDROP TABLE students")
+
+
+def test_semicolon_inside_a_string_literal_is_not_a_split(check):
+    sql = "SELECT name FROM students WHERE name = 'a;b' LIMIT 5"
+    assert check(sql) == sql

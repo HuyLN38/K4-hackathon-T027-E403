@@ -28,7 +28,7 @@
       <div class="field">
         <label for="sid">Mã học viên</label>
         <input id="sid" type="text" inputmode="text" autocomplete="off"
-               autocapitalize="characters" spellcheck="false" placeholder="K4001">
+               autocapitalize="characters" spellcheck="false" placeholder="2A20260XXXX">
       </div>
       <button id="submit" class="primary big">Ghi nhận có mặt</button>
       <div id="msg" class="alert error hidden mt-md"></div>
@@ -50,10 +50,14 @@
 
       <div class="confirm-facts" id="done-facts"></div>
 
-      <div class="confirm-check">
+      {# Câu này đổi theo cách vào: gõ tay thì lỗi khả dĩ là gõ nhầm mã, còn tự
+         nhận thì không ai gõ gì - nói "gõ sai" lúc đó là chỉ sai chỗ cần sửa. #}
+      <div class="confirm-check" id="confirm-check">
         <strong>Đúng tên bạn chưa?</strong>
-        Nếu đây không phải bạn thì mã học viên đã gõ sai — báo Labcoach ngay
-        để sửa, vì buổi này đang được ghi cho người có tên ở trên.
+        <span id="confirm-why">
+          Nếu đây không phải bạn thì mã học viên đã gõ sai — báo Labcoach ngay
+          để sửa, vì buổi này đang được ghi cho người có tên ở trên.
+        </span>
       </div>
 
       <div id="done-flags" class="mt-md"></div>

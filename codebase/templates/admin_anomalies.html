@@ -6,8 +6,7 @@
   <div class="page-head">
     <div>
       <h1>Flag</h1>
-      <p>Sáu rule deterministic (§4.6). <code>DEVICE_REUSE</code> và <code>DEVICE_MISMATCH</code> chặn trước khi ghi;
-         các rule còn lại vẫn ghi nhưng để lại flag. Mỗi flag cần người xử lý, không tự mất.</p>
+      <p id="mode-note">Sáu rule deterministic (§4.6). Mỗi flag cần người xử lý, không tự mất.</p>
     </div>
     <div class="spacer"></div>
     <div class="btn-row">
@@ -17,9 +16,16 @@
     </div>
   </div>
 
-  <div class="note mb-md" id="mode-note"></div>
+  {# Năm ô thống kê to chiếm nguyên một hàng và chỉ lặp lại thứ đã có trong bảng.
+     Đổi thành dải chip lọc: gọn bằng một dòng, và bấm được để lọc — cùng chỗ đó
+     vừa cho biết phân bố vừa làm được việc. #}
+  <div class="filter-bar mb-md" id="by-rule"></div>
 
-  <div class="grid cols-4 mb-md" id="by-rule"></div>
+  <p class="hint mb-sm">
+    Bấm một dòng để đọc đầy đủ.
+    <span class="badge blocked">đã chặn</span> nghĩa là lượt quét đó
+    <strong>không được ghi</strong> — buổi đó học viên chưa được tính có mặt.
+  </p>
 
   <div class="table-wrap">
     <table>
@@ -27,6 +33,15 @@
       <tbody id="rows"><tr><td colspan="9" class="empty">Đang tải…</td></tr></tbody>
     </table>
   </div>
+
+  <dialog class="modal" id="flag-modal">
+    <div class="modal-head">
+      <h2 id="flag-title">Chi tiết flag</h2>
+      <span class="spacer"></span>
+      <button id="flag-close">Đóng</button>
+    </div>
+    <div class="modal-body" id="flag-body"></div>
+  </dialog>
 </main>
 {% endblock %}
 

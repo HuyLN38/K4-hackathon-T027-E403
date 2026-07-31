@@ -18,7 +18,7 @@ function showForm(note) {
   sid.focus();
 }
 
-async function submitCheckin(studentId) {
+async function submitCheckin(studentId, { auto = false } = {}) {
   btn.disabled = true;
   btn.textContent = 'Đang ghi nhận…';
   setAlert(msg, '');
@@ -59,6 +59,13 @@ async function submitCheckin(studentId) {
     $('#done-facts').innerHTML = facts
       .map(([k, v]) => `<div><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`)
       .join('');
+
+    $('#confirm-why').textContent = auto
+      ? 'Máy này đang buộc với mã học viên ở trên nên hệ thống tự ghi. Nếu đây '
+        + 'không phải bạn — máy mượn, hoặc Labcoach buộc nhầm người — báo Labcoach '
+        + 'nhả thiết bị ngay, vì buổi này đang được ghi cho người có tên ở trên.'
+      : 'Nếu đây không phải bạn thì mã học viên đã gõ sai — báo Labcoach ngay '
+        + 'để sửa, vì buổi này đang được ghi cho người có tên ở trên.';
 
     const notes = [];
     if (res.device_locked_now) {
@@ -112,7 +119,7 @@ btn.addEventListener('click', () => {
     if (who.bound) {
       $('#detecting').querySelector('.empty').textContent =
         `Nhận ra ${who.name} (${who.student_id}) — đang ghi nhận…`;
-      await submitCheckin(who.student_id);
+      await submitCheckin(who.student_id, { auto: true });
       return;
     }
   } catch {

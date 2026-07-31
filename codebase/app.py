@@ -1589,7 +1589,11 @@ def api_anomalies_grouped(
                   MIN(f.created_at) AS first_at,
                   MAX(f.created_at) AS last_at,
                   GROUP_CONCAT(DISTINCT ses.date) AS dates,
-                  MAX(f.id) AS latest_flag_id
+                  MAX(f.id) AS latest_flag_id,
+                  -- attendance_id NULL = check-in đã bị chặn, không có dòng nào
+                  -- được ghi. Đây là khác biệt quan trọng nhất giữa hai loại flag
+                  -- và trước đây giao diện không hiện ra ở đâu cả.
+                  SUM(CASE WHEN f.attendance_id IS NULL THEN 1 ELSE 0 END) AS blocked_count
            FROM anomaly_flags f
            LEFT JOIN students s ON s.student_id = f.student_id
            LEFT JOIN sessions ses ON ses.session_id = f.session_id
@@ -1666,6 +1670,108 @@ def api_resolve_group(
     )
     conn.commit()
     return {"ok": True, "resolved": cur.rowcount}
+
+
+def _flag_context(conn: sqlite3.Connection, flag_id: int) -> dict[str, Any]:
+    """Gom đủ bối cảnh để đọc được câu chuyện đằng sau một flag.
+
+    Một dòng `detail` như "Chặn check-in: thiết bị đã buộc cho K4002" không tự nó
+    kể được chuyện gì: phải biết buổi nào, ai là K4002, học viên này còn flag nào
+    khác, và trước/sau đó có ai cùng buổi bị chặn không. Hàm này lấy hết một lần
+    để cả phần hiển thị lẫn phần mô hình diễn giải dùng chung một tập dữ kiện -
+    hai nguồn khác nhau thì màn hình và câu giải thích sẽ nói hai chuyện.
+    """
+    row = conn.execute(
+        """SELECT f.*, s.name AS student_name, ses.date, ses.start_time, ses.room, ses.state
+           FROM anomaly_flags f
+           LEFT JOIN students s ON s.student_id = f.student_id
+           LEFT JOIN sessions ses ON ses.session_id = f.session_id
+           WHERE f.id = ?""",
+        (flag_id,),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Không có flag này")
+
+    flag = dict(row)
+    flag["label"] = rules.RULE_LABEL_VI.get(row["rule_code"], row["rule_code"])
+    flag["label_short"] = rules.RULE_LABEL_SHORT_VI.get(row["rule_code"], row["rule_code"])
+
+    # Bản ghi điểm danh mà flag gắn vào (có thể NULL khi check-in bị chặn).
+    attendance = None
+    if row["attendance_id"]:
+        att = conn.execute(
+            "SELECT status, checkin_ts_ms, call_index, source, ip FROM attendance WHERE id = ?",
+            (row["attendance_id"],),
+        ).fetchone()
+        attendance = dict(att) if att else None
+
+    # Ai khác cùng dính flag này trong cùng buổi - vế kia của câu chuyện.
+    others = conn.execute(
+        """SELECT f.student_id, s.name, f.detail FROM anomaly_flags f
+           LEFT JOIN students s ON s.student_id = f.student_id
+           WHERE f.session_id IS ? AND f.rule_code = ? AND f.id != ?
+           ORDER BY f.created_at LIMIT 10""",
+        (row["session_id"], row["rule_code"], flag_id),
+    ).fetchall()
+
+    # Học viên này còn flag nào khác chưa xử lý.
+    same_student = conn.execute(
+        """SELECT rule_code, severity, detail, created_at, resolved FROM anomaly_flags
+           WHERE student_id IS ? AND id != ? ORDER BY created_at DESC LIMIT 10""",
+        (row["student_id"], flag_id),
+    ).fetchall()
+
+    return {
+        "flag": flag,
+        "attendance": attendance,
+        "others_same_session": rows_to_dicts(others),
+        "student_other_flags": [
+            {**dict(f), "label": rules.RULE_LABEL_VI.get(f["rule_code"], f["rule_code"])}
+            for f in same_student
+        ],
+    }
+
+
+@app.get("/api/admin/anomalies/{flag_id}")
+def api_flag_detail(
+    flag_id: int,
+    _admin: Session = Depends(require_admin),
+    conn: sqlite3.Connection = Depends(get_db),
+):
+    """Toàn bộ một flag, không bị cắt bằng "…".
+
+    Bảng hàng đợi phải cắt chữ để 8 cột nằm vừa khung; chỗ đọc đầy đủ là đây.
+    Phần này **deterministic**, luôn có kể cả khi Ollama chết.
+    """
+    ctx = _flag_context(conn, flag_id)
+    ctx["llm_enabled"] = llm.is_enabled(CONFIG)
+    return ctx
+
+
+@app.post("/api/admin/anomalies/{flag_id}/explain")
+def api_flag_explain(
+    flag_id: int,
+    _admin: Session = Depends(require_admin_write),
+    conn: sqlite3.Connection = Depends(get_db),
+):
+    """Diễn giải một flag thành chuyện đã xảy ra + việc nên kiểm (§4.2).
+
+    Vì sao đáng làm: `DEVICE_REUSE` kèm "thiết bị đã buộc cho K4002" là dữ kiện
+    đúng nhưng chưa dùng được - Labcoach vẫn phải tự ghép xem ai mượn máy ai, có
+    phải gian lận không, và nên hỏi gì. Đó chính là việc lặp lại 23 lần mỗi sáng.
+
+    Mô hình **không** kết luận có gian lận hay không và **không** đóng flag. Nó
+    dựng lại chuỗi sự việc từ dữ kiện và đề xuất câu hỏi. Quyết định vẫn của người,
+    vì hậu quả của việc kết tội oan một học viên nặng hơn việc bỏ sót một lần mượn
+    máy.
+    """
+    if not llm.is_enabled(CONFIG):
+        raise HTTPException(status_code=503, detail="Tầng mô hình đang tắt.")
+    ctx = _flag_context(conn, flag_id)
+    return {
+        "flag_id": flag_id,
+        "explanation": llm.explain_flag(ctx, CONFIG),
+    }
 
 
 class ResolveIn(BaseModel):
@@ -1762,13 +1868,37 @@ _SQL_FORBIDDEN = re.compile(
 )
 
 
+def _split_first_statement(sql: str) -> tuple[str, str]:
+    """Cắt ở dấu `;` đầu tiên nằm NGOÀI chuỗi trích dẫn. Trả (câu đầu, phần thừa)."""
+    quote: str | None = None
+    for i, ch in enumerate(sql):
+        if quote:
+            if ch == quote:
+                quote = None
+        elif ch in "'\"":
+            quote = ch
+        elif ch == ";":
+            return sql[:i], sql[i + 1:]
+    return sql, ""
+
+
 def _check_generated_sql(sql: str) -> str:
     """Trả về câu SQL đã chuẩn hoá, hoặc ném HTTPException 422 kèm lý do đọc được."""
-    cleaned = sql.strip().rstrip(";").strip()
+    head, tail = _split_first_statement(sql.strip())
+    cleaned = head.strip()
+
+    # Model hay kết thúc câu bằng `;` rồi mới nối `LIMIT 200` ở dòng sau - câu hỏi
+    # "ai chưa bind thiết bị" hỏng 100% vì lỗi này. Phần sau dấu `;` KHÔNG BAO GIỜ
+    # được chạy; ở đây chỉ quyết định là bỏ qua nó hay báo lỗi. Bỏ qua khi nó chỉ
+    # là mệnh đề LIMIT thừa (vô hại, và `fetchmany` đã chặn số dòng ở tầng dưới);
+    # còn nếu sau `;` có nội dung thật thì đó là dấu hiệu bị dụ sinh hai câu, phải
+    # nói ra chứ không im lặng chạy câu đầu.
+    leftover = tail.strip().rstrip(";").strip()
+    if leftover and not re.fullmatch(r"limit\s+\d+", leftover, re.IGNORECASE):
+        raise HTTPException(status_code=422, detail="Chỉ chạy được một câu lệnh.")
+
     if not cleaned:
         raise HTTPException(status_code=422, detail="Mô hình không sinh được câu truy vấn.")
-    if ";" in cleaned:
-        raise HTTPException(status_code=422, detail="Chỉ chạy được một câu lệnh.")
     if not re.match(r"^\s*(select|with)\b", cleaned, re.IGNORECASE):
         raise HTTPException(status_code=422, detail="Chỉ chạy câu SELECT.")
     if _SQL_FORBIDDEN.search(cleaned):
@@ -1824,6 +1954,36 @@ def api_ask(
             "rows": rows_to_dicts(rows)}
 
 
+def _norm_name(name: str) -> str:
+    """Chuẩn hoá tên để so khớp: bỏ dấu cách thừa, không phân biệt hoa thường.
+
+    Không bỏ dấu tiếng Việt: "Hà" và "Ha" là hai tên khác nhau, gộp lại là ghi
+    chuyên cần cho nhầm người.
+    """
+    return " ".join((name or "").split()).casefold()
+
+
+def _match_students_by_name(roster: list[sqlite3.Row], name: str | None) -> list[sqlite3.Row]:
+    """Tìm học viên theo tên. Trả về TẤT CẢ người khớp, không chọn hộ.
+
+    Trả về nhiều người là chuyện bình thường chứ không phải lỗi: §5.5 nói rõ lớp
+    có học viên trùng tên hoàn toàn. Ai gọi hàm này phải xử lý trường hợp đó -
+    đoán bừa một người là ghi chuyên cần cho nhầm người.
+    """
+    target = _norm_name(name)
+    if not target:
+        return []
+    exact = [r for r in roster if _norm_name(r["name"]) == target]
+    if exact:
+        return exact
+    # Không khớp nguyên tên thì thử khớp một phía: đơn hay viết thiếu họ
+    # ("em Bình xin nghỉ") hoặc thừa chữ ("em là bạn Nguyễn Văn An").
+    return [
+        r for r in roster
+        if target in _norm_name(r["name"]) or _norm_name(r["name"]) in target
+    ]
+
+
 class LeaveIn(BaseModel):
     text: str = Field(min_length=5, max_length=2000)
 
@@ -1843,25 +2003,120 @@ def api_parse_leave(
     if not llm.is_enabled(CONFIG):
         raise HTTPException(status_code=503, detail="Tầng mô hình đang tắt.")
 
-    known = [r["student_id"] for r in conn.execute(
-        "SELECT student_id FROM students WHERE active = 1 ORDER BY student_id"
-    )]
-    parsed = llm.parse_leave_request(payload.text, CONFIG, today=today_str(), known_student_ids=known)
+    roster = conn.execute(
+        "SELECT student_id, name FROM students WHERE active = 1 ORDER BY student_id"
+    ).fetchall()
+    known = [r["student_id"] for r in roster]
+    parsed = llm.parse_leave_request(payload.text, CONFIG, today=today_str(), roster=rows_to_dicts(roster))
     if parsed is None:
         raise HTTPException(status_code=503, detail="Ollama không phản hồi hoặc trả về sai định dạng.")
 
-    # Đối chiếu mã học viên với danh sách lớp thật. Mô hình đọc ra một mã không có
-    # trong lớp là chuyện thường (viết tắt, gõ nhầm) - nói ra chứ không im lặng nhận.
+    # Đối chiếu với danh sách lớp thật, bằng CODE chứ không tin mô hình khẳng định.
+    #
+    # Điểm mấu chốt: đối chiếu tên chạy **kể cả khi mô hình đã đưa ra một mã**. Vì
+    # đưa cả tên vào prompt thì mô hình tự tra tên -> mã, và với tên trùng hai người
+    # nó chọn bừa một người (§5.5: lớp có học viên trùng tên hoàn toàn). Ghi chuyên
+    # cần cho nhầm anh em sinh đôi là đúng thứ hệ thống này sinh ra để tránh.
+    #
+    # Phân biệt "mã có trong đơn" với "mã do mô hình suy ra" bằng cách tìm thẳng mã
+    # đó trong nguyên văn đơn: có trong đơn thì tin, không có thì đó là suy luận và
+    # phải kiểm lại.
     sid = (parsed.get("student_id") or "").strip().upper() or None
+    raw = payload.text.upper()
+    sid_in_text = bool(sid and sid in raw)
+
+    matches = _match_students_by_name(roster, parsed.get("student_name"))
+    parsed["name_matches"] = [dict(m) for m in matches]
     parsed["student_id"] = sid
     parsed["student_known"] = bool(sid and sid in known)
-    return {"ok": True, "parsed": parsed, "note": "Đề nghị của mô hình — cần Labcoach xác nhận trước khi ghi."}
+    parsed["lookup_note"] = None
+
+    if sid and sid not in known:
+        parsed["lookup_note"] = f"Mã {sid} KHÔNG có trong danh sách lớp."
+        parsed["student_id"] = None
+        parsed["student_known"] = False
+        sid = None
+
+    if len(matches) > 1 and not sid_in_text:
+        # Tên trùng nhiều người và đơn không ghi mã: dừng lại, bắt Labcoach chọn.
+        # Không giữ mã mô hình đoán - một mã sai trông y hệt một mã đúng.
+        ids = ", ".join(m["student_id"] for m in matches)
+        parsed["student_id"] = None
+        parsed["student_known"] = False
+        parsed["lookup_note"] = (
+            f"Có {len(matches)} học viên cùng tên \"{parsed.get('student_name')}\" "
+            f"({ids}) — đơn không ghi mã nên phải bạn chọn đúng người."
+        )
+    elif not parsed["student_known"] and len(matches) == 1:
+        parsed["student_id"] = matches[0]["student_id"]
+        parsed["student_known"] = True
+        parsed["lookup_note"] = (
+            f"Mã suy ra từ tên \"{matches[0]['name']}\" — đơn không ghi mã. Kiểm lại giúp."
+        )
+    elif not parsed["student_known"] and not parsed["lookup_note"]:
+        # Chỉ điền các ghi chú chung khi chưa có ghi chú cụ thể hơn: câu "mã K9999
+        # không có trong lớp" nói rõ hơn hẳn câu "đơn không ghi mã".
+        if parsed.get("student_name") and not matches:
+            parsed["lookup_note"] = (
+                f"Không tìm thấy \"{parsed['student_name']}\" trong danh sách lớp "
+                "— không khớp mã, cũng không khớp tên nào."
+            )
+        elif not parsed.get("student_name"):
+            parsed["lookup_note"] = "Đơn không ghi mã cũng không ghi tên."
+
+    return {"ok": True, "parsed": parsed,
+            "note": "Đề nghị của mô hình — cần Labcoach xác nhận trước khi ghi."}
 
 
 @app.get("/api/admin/llm-status")
 def api_llm_status(_admin: Session = Depends(require_admin)):
     """Ollama sống chưa, model tải chưa. Để trang hỏi đáp báo đúng lý do khi hỏng."""
     return llm.health(CONFIG)
+
+
+@app.get("/api/admin/llm-eval")
+def api_llm_eval(_admin: Session = Depends(require_admin)):
+    """Kết quả đo chất lượng tầng mô hình theo §7.2, đọc từ lần chạy eval gần nhất.
+
+    Vì sao đưa vào app chứ không để trong terminal: một chỉ tiêu chỉ tồn tại trong
+    output của người vừa chạy script thì với người dùng sản phẩm, nó không tồn tại.
+    Trang Trợ lý là chỗ mô hình nói chuyện trực tiếp với Labcoach, nên đó cũng là
+    chỗ phải nói rõ mô hình này đã được đo bằng gì và đo được bao nhiêu.
+
+    Trả `measured_at` để không ai nhìn một con số cũ mà tưởng là số của bản đang
+    chạy - và `stale` khi model trong config đã khác model lúc đo.
+    """
+    path = BASE_DIR.parent / "eval" / "llm_eval_latest.json"
+    if not path.exists():
+        return {"available": False,
+                "hint": "Chạy `python eval/run_llm_eval.py` để sinh số đo."}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {"available": False, "hint": "File kết quả đo bị hỏng, chạy lại eval."}
+
+    data["available"] = True
+    data["stale"] = data.get("model") != CONFIG["llm"].get("model")
+    data["current_model"] = CONFIG["llm"].get("model")
+
+    # Lịch sử các lượt chạy. Chỉ tiêu "không bịa" dao động giữa các lượt, nên một
+    # con số đơn lẻ không nói được chất lượng - phải thấy được nó đang là lượt may
+    # hay lượt xấu. Lấy 12 lượt gần nhất, đủ để nhìn ra dao động mà không thành
+    # một bảng dài không ai đọc.
+    history_path = path.with_name("llm_eval_history.jsonl")
+    history: list[dict[str, Any]] = []
+    if history_path.exists():
+        for line in history_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                history.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    data["history"] = history[-12:]
+    data["runs_total"] = len(history)
+    return data
 
 
 @app.get("/api/health")

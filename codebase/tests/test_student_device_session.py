@@ -171,3 +171,75 @@ def test_device_session_is_audited_distinctly_from_pin_login(appmod, seeded, adm
         "SELECT action FROM audit_log WHERE actor = 'K4001'")]
     assert "student_device_session" in actions
     assert "student_login" not in actions
+
+
+# ==========================================================================
+# /api/checkin/whoami — trang check-in tự điền mã từ lần thứ hai
+# ==========================================================================
+def whoami(client, fingerprint: str = "fp-may-cua-toi"):
+    return client.post("/api/checkin/whoami", json={"fingerprint": fingerprint})
+
+
+def test_whoami_reports_nothing_on_a_fresh_device(appmod, seeded):
+    res = whoami(make_client(appmod))
+    assert res.status_code == 200
+    assert res.json() == {"bound": False}
+
+
+def test_whoami_names_the_student_after_the_first_checkin(appmod, seeded, admin_client, conn):
+    device = bind_device(appmod, admin_client, conn, "K4001")
+    body = whoami(device).json()
+    assert body["bound"] is True
+    assert body["student_id"] == "K4001"
+    assert body["name"]
+
+
+def test_whoami_needs_the_same_fingerprint(appmod, seeded, admin_client, conn):
+    device = bind_device(appmod, admin_client, conn, "K4001")
+    assert whoami(device, fingerprint="fp-may-khac").json() == {"bound": False}
+
+
+def test_whoami_forgets_the_student_after_the_device_is_released(
+    appmod, seeded, admin_client, conn
+):
+    device = bind_device(appmod, admin_client, conn, "K4001")
+    admin_client.post("/api/admin/students/K4001/release-device", json={"note": "đổi máy"})
+    assert whoami(device).json() == {"bound": False}
+
+
+def test_whoami_writes_nothing(appmod, seeded, admin_client, conn):
+    """Chỉ đọc. Ghi vẫn phải qua /api/checkin với token QR còn sống."""
+    device = bind_device(appmod, admin_client, conn, "K4001")
+    before = (
+        conn.execute("SELECT COUNT(*) FROM attendance").fetchone()[0],
+        conn.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0],
+        conn.execute("SELECT COUNT(*) FROM anomaly_flags").fetchone()[0],
+    )
+    for _ in range(3):
+        whoami(device)
+    after = (
+        conn.execute("SELECT COUNT(*) FROM attendance").fetchone()[0],
+        conn.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0],
+        conn.execute("SELECT COUNT(*) FROM anomaly_flags").fetchone()[0],
+    )
+    assert before == after
+
+
+def test_second_session_checks_in_without_retyping_the_id(appmod, seeded, admin_client, conn):
+    """Đường thật của tính năng: buổi 1 gõ mã, buổi 2 chỉ quét là xong."""
+    device = bind_device(appmod, admin_client, conn, "K4001")
+
+    second = create_session(conn, "2026-07-31")
+    open_session(admin_client, second)
+    # Trang lấy mã từ whoami chứ không hỏi học viên.
+    student_id = whoami(device).json()["student_id"]
+    res = checkin(device, current_token(admin_client, second), student_id, "fp-may-cua-toi")
+    assert res.status_code == 200, res.text
+    assert res.json()["student_id"] == "K4001"
+
+
+def test_whoami_ignores_a_deactivated_student(appmod, seeded, admin_client, conn):
+    device = bind_device(appmod, admin_client, conn, "K4001")
+    conn.execute("UPDATE students SET active = 0 WHERE student_id = 'K4001'")
+    conn.commit()
+    assert whoami(device).json() == {"bound": False}
