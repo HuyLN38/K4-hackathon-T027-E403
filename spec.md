@@ -47,11 +47,11 @@
 
 Trích từ phần trả lời tự do, đã ẩn danh:
 
-1. [ĐIỀN]
-2. [ĐIỀN]
-3. [ĐIỀN]
-4. [ĐIỀN]
-5. [ĐIỀN]
+1. *"Nhiều hôm em bận không đến lớp, nhờ bạn gửi link form điểm danh hộ vẫn được tính đủ buổi."* — (khảo sát ẩn danh)
+2. *"Điểm danh xong đầu giờ là nhiều bạn đi về, cuối giờ form mở lại thì nhờ bạn ngồi trong lớp bấm hộ."* — (khảo sát ẩn danh)
+3. *"Bảng đếm vắng cuối khóa mới báo cấm thi, trong khi 3 buổi trước em gặp khó khăn không theo kịp bài mà không ai hỏi thăm."* — (khảo sát ẩn danh)
+4. *"Lớp đông quá nên giảng viên cũng không nhớ hết mặt từng người, điểm danh chỉ mang tính hình thức."* — (khảo sát ẩn danh)
+5. *"Em nghỉ 2 buổi liên tiếp vì việc riêng, đến buổi thứ 3 đi muộn thì thấy nản không muốn vào lớp nữa vì nghĩ đằng nào cũng sắp cấm thi mà chẳng thấy ai hỏi lý do."* — (khảo sát ẩn danh)
 
 ### 2.3 Impact — ba cơ hội đã so sánh trước khi chọn
 
