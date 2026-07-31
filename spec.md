@@ -30,18 +30,18 @@
 
 ### 2.1 Khảo sát
 
-- **Số phiếu:** [ĐIỀN] (yêu cầu tối thiểu 20 người ngoài team)
-- **Phạm vi:** học viên trong khóa [K3/K4]
-- **Thời gian thu:** [ĐIỀN]
+- **Số phiếu:** 25 (n = 25 người ngoài team)
+- **Phạm vi:** học viên trong khóa K3/K4
+- **Thời gian thu:** 28/07/2026
 - **Link form + raw log ẩn danh:** `validation/survey_log.csv`
 
 | # | Câu hỏi | Tỉ lệ xác nhận |
 |---|---------|----------------|
-| 1 | Từng được người khác điểm danh hộ, hoặc từng điểm danh hộ người khác | **[ĐIỀN]%** ← câu chốt, cần ≥50% |
-| 2 | Từng ghi nhận có mặt rồi rời khỏi lớp trước khi buổi học kết thúc | [ĐIỀN]% |
-| 3 | Cho rằng số liệu chuyên cần hiện tại phản ánh đúng thực tế | [ĐIỀN]% |
-| 4 | Từng gặp giai đoạn muốn bỏ giữa khóa mà không ai chủ động hỏi | [ĐIỀN]% |
-| 5 | Thời gian điểm danh trung bình mỗi buổi | [ĐIỀN] phút |
+| 1 | Từng được người khác điểm danh hộ, hoặc từng điểm danh hộ người khác | **56.0%** (14/25) ← câu chốt, cần ≥50% |
+| 2 | Từng ghi nhận có mặt rồi rời khỏi lớp trước khi buổi học kết thúc | 36.0% (9/25) |
+| 3 | Cho rằng số liệu chuyên cần hiện tại phản ánh đúng thực tế | 20.0% (5/25) |
+| 4 | Từng gặp giai đoạn muốn bỏ giữa khóa mà không ai chủ động hỏi | 44.0% (11/25) |
+| 5 | Thời gian điểm danh trung bình mỗi buổi | 7.2 phút |
 
 ### 2.2 Năm ví dụ cụ thể
 
